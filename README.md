@@ -1,50 +1,123 @@
-# Welcome to your Expo app 👋
+# Pocket - A Wallet Payment System with IoT SoundBox
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A closed-loop digital wallet system integrated with an IoT-based SoundBox that delivers real-time audio payment notifications to merchants. Built as a Final Year Project at COMSATS University Islamabad, Abbottabad Campus.
 
-## Get started
+---
 
-1. Install dependencies
+## 📌 Project Overview
 
-   ```bash
-   npm install
-   ```
+When a customer makes a payment through the mobile wallet app, the backend processes and verifies the transaction, then instantly pushes a notification to the merchant's IoT SoundBox via MQTT. The SoundBox announces the payment amount aloud (e.g. *"Rs. 500 received"*), giving merchants immediate, hands-free confirmation — no SMS, no manual app checking.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 👥 Team
 
-In the output, you'll find options to open the app in a
+| Name | Registration | Role |
+|---|---|---|
+| Jawaid Aziz | CIIT/SP23-BCS-043/ATD | Authentication, Transactions, MQTT Layer, Payload Verification |
+| Noman Mazari | CIIT/SP23-BCS-015/ATD | Stripe Integration, ESP32 Firmware, Network Connectivity, Testing |
+| Sania Zehra | CIIT/SP23-BCS-077/ATD | UI/UX, Frontend Development, Account Management, Audio Playback, Documentation |
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+**Supervisor:** Bushra Mushtaq
+**Degree:** BS Computer Science (2023–2027)
+**Institution:** COMSATS University Islamabad, Abbottabad Campus
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## 🛠 Tech Stack
 
-When you're ready, run:
+### Mobile App
+| Technology | Purpose |
+|---|---|
+| React Native (Expo) | Cross-platform mobile app (Android & iOS) |
+| NativeWind | Tailwind CSS utility classes for React Native |
+| Gluestack UI | Pre-built accessible and responsive UI components |
+| TanStack Query | API data fetching, caching, and synchronization |
+| Zustand | Lightweight global state management |
+| Expo Secure Store | Secure JWT token storage on device |
+| Stripe React Native SDK | Payment intent initiation |
+| MQTT.js | Real-time push notifications to merchant app |
 
-```bash
-npm run reset-project
+### Backend
+| Technology | Purpose |
+|---|---|
+| Node.js | Runtime environment |
+| NestJS | Scalable backend framework (modules, controllers, services) |
+| Stripe Node.js SDK | Payment authorization and webhook verification |
+| MQTT.js | Publishing payment events to the MQTT broker |
+| JWT (jsonwebtoken) | Authentication token generation and verification |
+| bcryptjs | Password hashing |
+| Joi / Zod | Request validation and schema enforcement |
+| Helmet | HTTP security headers |
+| Morgan | Request logging |
+
+### Database
+| Technology | Purpose |
+|---|---|
+| PostgreSQL | Primary relational database |
+| Prisma ORM | Database schema, migrations, and queries |
+
+### IoT (ESP32 SoundBox)
+| Technology | Purpose |
+|---|---|
+| Arduino Framework | ESP32 firmware development |
+| PubSubClient | MQTT client for ESP32 |
+| ArduinoJson | JSON payload parsing |
+| ESP32-audioI2S | Audio file playback via I2S DAC |
+| SD Library | Reading audio files from MicroSD card |
+| TinyGSM | SIM800L cellular connectivity |
+| HTTPUpdate | OTA firmware updates |
+| WiFiClientSecure | TLS-secured Wi-Fi connections |
+
+### Infrastructure & Dev Tools
+| Tool | Purpose |
+|---|---|
+| Mosquitto | Self-hosted MQTT broker |
+| ngrok | Expose localhost to Stripe webhooks during development |
+| Postman | API testing and webhook simulation |
+| PlatformIO | ESP32 firmware IDE (VS Code extension) |
+| GitHub | Version control and collaboration |
+| Figma | UI/UX mockup and design |
+
+---
+
+## 🏗 System Architecture
+
+```
+┌─────────────────────┐
+│   Mobile Wallet App  │  ← React Native Expo
+│  (Customer / Merchant)│
+└────────┬────────────┘
+         │ HTTPS (REST API)
+         ▼
+┌─────────────────────┐
+│    NestJS Backend    │  ← Node.js + NestJS
+│   (Transaction Engine)│
+└──┬──────────────────┘
+   │              │
+   │ Stripe API   │ MQTT Publish
+   ▼              ▼
+┌──────────┐  ┌───────────────┐
+│  Stripe  │  │ MQTT Broker   │  ← Mosquitto
+│ Sandbox  │  │ (Mosquitto)   │
+└──────────┘  └───────┬───────┘
+  Webhook ──►         │ Subscribe
+  callback            ▼
+             ┌─────────────────┐
+             │   ESP32 Device   │  ← IoT SoundBox
+             │  (SoundBox FW)   │
+             └────────┬────────┘
+                      │
+                      ▼
+             🔊 "Rs. 500 received"
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 📄 License
 
-To learn more about developing your project with Expo, look at the following resources:
+This project is developed for academic purposes as part of the Final Year Project program at COMSATS University Islamabad, Abbottabad Campus. Not licensed for commercial use without permission.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+> **COMSATS University Islamabad, Abbottabad Campus — BS Computer Science 2023–2027**
