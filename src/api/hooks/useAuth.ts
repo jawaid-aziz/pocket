@@ -3,6 +3,7 @@ import * as authApi from "../auth";
 import { useAuthStore } from "../../store/authStore";
 import { saveRefreshToken } from "../../utils/secureStorage";
 import { verifyOtp as verifyOtpApi } from "../auth";
+import { verifyPinUnlock, getMe } from '../auth';
 
 export function useRequestOtp() {
   return useMutation({
@@ -49,12 +50,21 @@ export function useLoginNewDevice() {
 export function usePinUnlock() {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const setUnlocked = useAuthStore((s) => s.setUnlocked);
+  const setSession = useAuthStore((s) => s.setSession);
 
   return useMutation({
     mutationFn: authApi.verifyPinUnlock,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setAccessToken(data.accessToken);
       setUnlocked(true);
+      // Restore user object into Zustand
+      try {
+        const { user } = await getMe(data.accessToken);
+        setSession(user, data.accessToken);
+      } catch {
+        // Non-fatal — access token is set, user can still proceed
+        // Dashboard will handle missing user gracefully
+      }
     },
   });
 }

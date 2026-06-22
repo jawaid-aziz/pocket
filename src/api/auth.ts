@@ -81,3 +81,7 @@ export function logout(refreshToken: string) {
     body: JSON.stringify({ refreshToken }),
   });
 }
+
+export function getMe(token: string) {
+  return apiClient<{ user: User }>('/api/auth/me', { token });
+}
