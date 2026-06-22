@@ -4,10 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { useVerifyOtp } from "@/src/api/hooks/useAuth";
 
 export default function OtpScreen() {
   const { phone, purpose } = useLocalSearchParams<{
@@ -18,6 +20,7 @@ export default function OtpScreen() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const inputRef = useRef<TextInput>(null);
+  const verifyOtp = useVerifyOtp();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -31,10 +34,18 @@ export default function OtpScreen() {
       return;
     }
 
-    router.replace({
-      pathname: "/set-pin" as any,
-      params: { phone, purpose, otpCode: otp },
-    });
+    verifyOtp.mutate(
+      { phone, otpCode: otp, purpose },
+      {
+        onSuccess: (data) => {
+          router.replace({
+            pathname: "/set-pin" as any,
+            params: { phone, purpose, otpToken: data.otpToken },
+          });
+        },
+        onError: (err: any) => setError(err.message || "Invalid OTP"),
+      }
+    );
   }
 
   return (
@@ -43,7 +54,6 @@ export default function OtpScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View className="flex-1 justify-center px-6">
-        {/* Header */}
         <View className="mb-10">
           <Text className="text-white text-2xl font-semibold">
             Verify your number
@@ -54,7 +64,6 @@ export default function OtpScreen() {
           </Text>
         </View>
 
-        {/* OTP Input */}
         <View className="mb-4">
           <TextInput
             ref={inputRef}
@@ -76,18 +85,24 @@ export default function OtpScreen() {
           ) : null}
         </View>
 
-        {/* Verify Button */}
         <TouchableOpacity
-          className="rounded-xl py-4 items-center mt-2 bg-accent"
+          className={`rounded-xl py-4 items-center mt-2 ${
+            verifyOtp.isPending ? "bg-accent/50" : "bg-accent"
+          }`}
           onPress={handleVerify}
+          disabled={verifyOtp.isPending}
         >
-          <Text className="text-white text-base font-semibold">Verify</Text>
+          {verifyOtp.isPending ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-white text-base font-semibold">Verify</Text>
+          )}
         </TouchableOpacity>
 
-        {/* Back */}
         <TouchableOpacity
           className="mt-4 items-center"
           onPress={() => router.back()}
+          disabled={verifyOtp.isPending}
         >
           <Text className="text-gray-400 text-sm">← Wrong number? Go back</Text>
         </TouchableOpacity>

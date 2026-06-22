@@ -1,12 +1,24 @@
-import { useMutation } from '@tanstack/react-query';
-import * as authApi from '../auth';
-import { useAuthStore } from '../../store/authStore';
-import { saveRefreshToken } from '../../utils/secureStorage';
+import { useMutation } from "@tanstack/react-query";
+import * as authApi from "../auth";
+import { useAuthStore } from "../../store/authStore";
+import { saveRefreshToken } from "../../utils/secureStorage";
+import { verifyOtp as verifyOtpApi } from "../auth";
 
 export function useRequestOtp() {
   return useMutation({
-    mutationFn: ({ phone, purpose }: { phone: string; purpose: 'SIGNUP' | 'LOGIN_NEW_DEVICE' }) =>
-      authApi.requestOtp(phone, purpose),
+    mutationFn: ({
+      phone,
+      purpose,
+    }: {
+      phone: string;
+      purpose: "SIGNUP" | "LOGIN_NEW_DEVICE";
+    }) => authApi.requestOtp(phone, purpose),
+  });
+}
+
+export function useVerifyOtp() {
+  return useMutation({
+    mutationFn: verifyOtpApi,
   });
 }
 

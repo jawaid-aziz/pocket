@@ -10,10 +10,10 @@ const PIN_LENGTH = 6;
 type Step = 'enter' | 'confirm';
 
 export default function SetPinScreen() {
-  const { phone, purpose, otpCode } = useLocalSearchParams<{
+  const { phone, purpose, otpToken } = useLocalSearchParams<{
     phone: string;
     purpose: 'SIGNUP' | 'LOGIN_NEW_DEVICE';
-    otpCode: string;
+    otpToken: string;
   }>();
 
   const [step, setStep] = useState<Step>('enter');
@@ -60,7 +60,7 @@ export default function SetPinScreen() {
   function submitWithPin(finalPin: string) {
     if (purpose === 'SIGNUP') {
       signup.mutate(
-        { phone, otpCode, pin: finalPin },
+        { phone, otpToken, pin: finalPin },
         {
           onSuccess: () => router.replace('/(tabs)' as any),
           onError: (err: any) => {
@@ -73,7 +73,7 @@ export default function SetPinScreen() {
       );
     } else {
       loginNewDevice.mutate(
-        { phone, otpCode, pin: finalPin },
+        { phone, otpToken, pin: finalPin },
         {
           onSuccess: () => router.replace('/(tabs)' as any),
           onError: (err: any) => {
