@@ -31,7 +31,6 @@ When a customer makes a payment through the mobile wallet app, the backend proce
 |---|---|
 | React Native (Expo) | Cross-platform mobile app (Android & iOS) |
 | NativeWind | Tailwind CSS utility classes for React Native |
-| Gluestack UI | Pre-built accessible and responsive UI components |
 | TanStack Query | API data fetching, caching, and synchronization |
 | Zustand | Lightweight global state management |
 | Expo Secure Store | Secure JWT token storage on device |
@@ -42,12 +41,11 @@ When a customer makes a payment through the mobile wallet app, the backend proce
 | Technology | Purpose |
 |---|---|
 | Node.js | Runtime environment |
-| NestJS | Scalable backend framework (modules, controllers, services) |
+| ExpressJS | Scalable backend framework (modules, controllers, services) |
 | Stripe Node.js SDK | Payment authorization and webhook verification |
 | MQTT.js | Publishing payment events to the MQTT broker |
 | JWT (jsonwebtoken) | Authentication token generation and verification |
-| bcryptjs | Password hashing |
-| Joi / Zod | Request validation and schema enforcement |
+| Argon2 | Password hashing |
 | Helmet | HTTP security headers |
 | Morgan | Request logging |
 
