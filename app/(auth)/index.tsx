@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
-import { getRefreshToken } from '@/src/utils/secureStorage';
+import { useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
+import { router } from "expo-router";
+import { getRefreshToken } from "@/src/utils/secureStorage";
 
 export default function SplashScreen() {
   useEffect(() => {
@@ -9,11 +9,11 @@ export default function SplashScreen() {
       const token = await getRefreshToken();
       if (token) {
         router.replace({
-          pathname: '/pin' as any,
+          pathname: "/pin" as any,
           params: { refreshToken: token },
         });
       } else {
-        router.replace('/login' as any);
+        router.replace("/login" as any);
       }
     }
     checkSession();

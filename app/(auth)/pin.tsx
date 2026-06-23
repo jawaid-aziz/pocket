@@ -1,57 +1,60 @@
-import { useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import PinPad from '@/src/components/PinPad';
-import PinDots from '@/src/components/PinDots';
-import { usePinUnlock } from '@/src/api/hooks/useAuth';
-import { clearRefreshToken } from '@/src/utils/secureStorage';
+import { useState } from "react";
+import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import PinPad from "@/src/components/PinPad";
+import PinDots from "@/src/components/PinDots";
+import { usePinUnlock } from "@/src/api/hooks/useAuth";
+import { clearRefreshToken } from "@/src/utils/secureStorage";
 
 const PIN_LENGTH = 6;
 
 export default function PinScreen() {
   const { refreshToken } = useLocalSearchParams<{ refreshToken: string }>();
 
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState('');
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
   const pinUnlock = usePinUnlock();
 
   function handleDigit(digit: string) {
     if (pin.length >= PIN_LENGTH || pinUnlock.isPending) return;
     const next = pin + digit;
     setPin(next);
-    setError('');
+    setError("");
 
     if (next.length === PIN_LENGTH) {
       pinUnlock.mutate(
         { refreshToken, pin: next },
         {
           onSuccess: () => {
-            router.replace('/(tabs)' as any);
+            router.replace("/(tabs)" as any);
           },
           onError: async (err: any) => {
-            setPin('');
+            setPin("");
             // 401 with "Device not recognized" = token revoked → force re-login
-            if (err.status === 401 && err.message?.includes('Device not recognized')) {
+            if (
+              err.status === 401 &&
+              err.message?.includes("Device not recognized")
+            ) {
               await clearRefreshToken();
-              router.replace('/login' as any);
+              router.replace("/login" as any);
             } else {
-              setError(err.message || 'Incorrect PIN');
+              setError(err.message || "Incorrect PIN");
             }
           },
-        }
+        },
       );
     }
   }
 
   function handleDelete() {
     if (pinUnlock.isPending) return;
-    setError('');
+    setError("");
     setPin(pin.slice(0, -1));
   }
 
   async function handleSignOut() {
     await clearRefreshToken();
-    router.replace('/login' as any);
+    router.replace("/login" as any);
   }
 
   return (
@@ -66,11 +69,7 @@ export default function PinScreen() {
       </View>
 
       {/* PIN Dots */}
-      <PinDots
-        length={PIN_LENGTH}
-        filled={pin.length}
-        error={!!error}
-      />
+      <PinDots length={PIN_LENGTH} filled={pin.length} error={!!error} />
 
       {/* Error */}
       {error ? (
@@ -93,9 +92,7 @@ export default function PinScreen() {
         onPress={handleSignOut}
         disabled={pinUnlock.isPending}
       >
-        <Text className="text-gray-500 text-sm">
-          Not you? Sign out
-        </Text>
+        <Text className="text-gray-500 text-sm">Not you? Sign out</Text>
       </TouchableOpacity>
     </View>
   );

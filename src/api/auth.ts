@@ -83,5 +83,5 @@ export function logout(refreshToken: string) {
 }
 
 export function getMe(token: string) {
-  return apiClient<{ user: User }>('/api/auth/me', { token });
+  return apiClient<{ user: User }>("/api/auth/me", { token });
 }

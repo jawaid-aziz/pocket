@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { View } from "react-native";
 
 interface PinDotsProps {
   length: number;
@@ -14,10 +14,10 @@ export default function PinDots({ length, filled, error }: PinDotsProps) {
           key={i}
           className={`w-4 h-4 rounded-full border-2 ${
             error
-              ? 'border-red-400 bg-red-400'
+              ? "border-red-400 bg-red-400"
               : i < filled
-              ? 'border-accent bg-accent'
-              : 'border-gray-500 bg-transparent'
+                ? "border-accent bg-accent"
+                : "border-gray-500 bg-transparent"
           }`}
         />
       ))}

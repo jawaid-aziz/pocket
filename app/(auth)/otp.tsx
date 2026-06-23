@@ -44,7 +44,7 @@ export default function OtpScreen() {
           });
         },
         onError: (err: any) => setError(err.message || "Invalid OTP"),
-      }
+      },
     );
   }
 

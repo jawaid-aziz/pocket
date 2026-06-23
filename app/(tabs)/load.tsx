@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
 
 export default function LoadMoneyScreen() {
   return (
