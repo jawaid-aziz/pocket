@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/src/store/authStore";
 import { useWalletStore } from "@/src/store/walletStore";
 import TransactionItem, { Transaction } from "@/src/components/TransactionItem";
+import { useMe } from "@/src/api/hooks/useAccount";
 
 // Placeholder transactions until backend endpoint is built
 const MOCK_TRANSACTIONS: Transaction[] = [
@@ -40,6 +41,7 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const balance = useWalletStore((s) => s.balance);
+  const { isLoading, refetch, isRefetching } = useMe();
 
   function getGreeting() {
     const hour = new Date().getHours();
@@ -107,8 +109,8 @@ export default function DashboardScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={false}
-              onRefresh={() => {}}
+              refreshing={isRefetching}
+              onRefresh={refetch}
               tintColor="#10B981"
             />
           }
