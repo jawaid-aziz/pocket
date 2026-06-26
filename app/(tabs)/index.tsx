@@ -11,6 +11,7 @@ import { useAuthStore } from "@/src/store/authStore";
 import { useWalletStore } from "@/src/store/walletStore";
 import TransactionItem, { Transaction } from "@/src/components/TransactionItem";
 import { useMe } from "@/src/api/hooks/useAccount";
+import { useTransactions } from "@/src/api/hooks/useTransactions";
 
 // Placeholder transactions until backend endpoint is built
 const MOCK_TRANSACTIONS: Transaction[] = [
@@ -42,6 +43,11 @@ export default function DashboardScreen() {
   const user = useAuthStore((s) => s.user);
   const balance = useWalletStore((s) => s.balance);
   const { isLoading, refetch, isRefetching } = useMe();
+  const {
+    data: transactions,
+    isRefetching: txRefetching,
+    refetch: refetchTx,
+  } = useTransactions();
 
   function getGreeting() {
     const hour = new Date().getHours();
@@ -115,7 +121,7 @@ export default function DashboardScreen() {
             />
           }
         >
-          {MOCK_TRANSACTIONS.length === 0 ? (
+          {!transactions || transactions.length === 0 ? (
             <View className="items-center py-12">
               <Text className="text-gray-500 text-sm">No transactions yet</Text>
               <Text className="text-gray-600 text-xs mt-1">
@@ -123,8 +129,17 @@ export default function DashboardScreen() {
               </Text>
             </View>
           ) : (
-            MOCK_TRANSACTIONS.map((tx) => (
-              <TransactionItem key={tx.id} transaction={tx} />
+            transactions.slice(0, 5).map((tx) => (
+              <TransactionItem
+                key={tx.id}
+                transaction={{
+                  id: tx.id,
+                  type: tx.type === "TRANSFER_SENT" ? "DEBIT" : "CREDIT",
+                  amount: Number(tx.amount),
+                  description: tx.description || tx.type,
+                  createdAt: tx.createdAt,
+                }}
+              />
             ))
           )}
           {/* Bottom padding so last item isn't cut off by tab bar */}
