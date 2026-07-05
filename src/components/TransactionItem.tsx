@@ -1,53 +1,82 @@
-import { View, Text } from "react-native";
+// components/TransactionItem.tsx
+import { View, Text } from 'react-native';
+import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react-native';
+import { colors, spacing, txColors, TxKind } from '../theme/tokens';
 
-export type Transaction = {
+export type BackendTransaction = {
   id: string;
-  type: "CREDIT" | "DEBIT";
-  amount: number;
-  description: string;
+  type: 'TOPUP' | 'TRANSFER_SENT' | 'TRANSFER_RECEIVED';
+  amount: number | string;
+  description?: string | null;
   createdAt: string;
 };
 
-interface Props {
-  transaction: Transaction;
+function toKind(type: BackendTransaction['type']): TxKind {
+  if (type === 'TOPUP') return 'topup';
+  if (type === 'TRANSFER_RECEIVED') return 'received';
+  return 'sent';
 }
 
-export default function TransactionItem({ transaction }: Props) {
-  const isCredit = transaction.type === "CREDIT";
+function toLabel(tx: BackendTransaction): string {
+  if (tx.type === 'TOPUP') return 'Wallet top-up';
+  return tx.description || (tx.type === 'TRANSFER_SENT' ? 'Sent' : 'Received');
+}
+
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  return `${days} days ago`;
+}
+
+const icons: Record<TxKind, React.ComponentType<any>> = {
+  received: ArrowDownLeft,
+  sent: ArrowUpRight,
+  topup: Wallet,
+};
+
+export function TransactionItem({ tx }: { tx: BackendTransaction }) {
+  const kind = toKind(tx.type);
+  const { bg, fg, sign } = txColors[kind];
+  const Icon = icons[kind];
+  const amount = Number(tx.amount);
 
   return (
-    <View className="flex-row items-center justify-between py-3 border-b border-white/5">
-      {/* Icon + Description */}
-      <View className="flex-row items-center gap-3">
-        <View
-          className={`w-10 h-10 rounded-full items-center justify-center ${
-            isCredit ? "bg-accent/20" : "bg-red-500/20"
-          }`}
-        >
-          <Text className="text-lg">{isCredit ? "↓" : "↑"}</Text>
-        </View>
-        <View>
-          <Text className="text-white text-sm font-medium">
-            {transaction.description}
-          </Text>
-          <Text className="text-gray-500 text-xs mt-0.5">
-            {new Date(transaction.createdAt).toLocaleDateString("en-PK", {
-              day: "numeric",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </Text>
-        </View>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: spacing(3),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+      }}
+    >
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: bg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon size={17} color={fg} />
       </View>
 
-      {/* Amount */}
-      <Text
-        className={`text-sm font-semibold ${
-          isCredit ? "text-accent" : "text-red-400"
-        }`}
-      >
-        {isCredit ? "+" : "-"}Rs. {transaction.amount.toLocaleString()}
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>{toLabel(tx)}</Text>
+        <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{timeAgo(tx.createdAt)}</Text>
+      </View>
+
+      <Text style={{ fontSize: 14, fontWeight: '700', color: fg }}>
+        {sign}Rs. {amount.toLocaleString()}
       </Text>
     </View>
   );

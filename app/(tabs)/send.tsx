@@ -1,154 +1,212 @@
+import { useState, useMemo } from "react";
+import { View, Text, TextInput, ScrollView, Pressable } from "react-native";
+import { useRouter } from "expo-router";
+import { Plus } from "lucide-react-native";
 import {
-  View, Text, TextInput, TouchableOpacity,
-  Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
-} from "react-native";
-import { router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState } from "react";
-import { useSendMoney } from "@/src/api/hooks/useTransactions";
-import { useWalletStore } from "@/src/store/walletStore";
+  useTransactions,
+  useSendMoney,
+} from "../../src/api/hooks/useTransactions";
+import { Button } from "../../src/components/Button";
+import { colors, radius, spacing } from "../../src/theme/tokens";
 
-export default function SendMoneyScreen() {
-  const insets = useSafeAreaInsets();
-  const balance = useWalletStore((s) => s.balance);
-  const { mutate: send, isPending } = useSendMoney();
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
+export default function SendScreen() {
+  const router = useRouter();
+  const { data: transactions } = useTransactions();
+  const sendMoney = useSendMoney();
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSend() {
-    const parsed = Number(amount);
+  const recentContacts = useMemo(() => {
+    const sent = (transactions ?? []).filter((t) => t.type === "TRANSFER_SENT");
+    const seen = new Map<string, { name: string; phone: string }>();
+    for (const t of sent) {
+      const user = t.counterpartWallet?.user;
+      if (!user) continue;
+      const label = user.name || user.phone;
+      if (!seen.has(label)) seen.set(label, { name: label, phone: user.phone });
+    }
+    return Array.from(seen.values()).slice(0, 2);
+  }, [transactions]);
 
-    if (!phone.trim()) {
-      Alert.alert("Missing Info", "Please enter recipient phone number.");
-      return;
-    }
-    if (!parsed || parsed <= 0) {
-      Alert.alert("Invalid Amount", "Please enter a valid amount.");
-      return;
-    }
-    if (parsed > Number(balance)) {
-      Alert.alert("Insufficient Balance", "You don't have enough funds.");
-      return;
-    }
+  const handleSend = () => {
+    setError(null);
+    const numericAmount = Number(amount);
 
-    Alert.alert(
-      "Confirm Transfer",
-      `Send Rs. ${parsed.toLocaleString()} to ${phone}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send",
-          onPress: () =>
-            send(
-              { recipientPhone: phone.trim(), amount: parsed, description },
-              {
-                onSuccess: (data) => {
-                  Alert.alert(
-                    "Sent!",
-                    `Rs. ${parsed.toLocaleString()} sent to ${data.recipient.name || data.recipient.phone}`,
-                    [{ text: "OK", onPress: () => router.back() }]
-                  );
-                  setPhone("");
-                  setAmount("");
-                  setDescription("");
-                },
-                onError: (err: any) => {
-                  Alert.alert("Failed", err?.message || "Transfer failed.");
-                },
-              }
-            ),
-        },
-      ]
+    if (!phone.trim()) return setError("Enter a recipient phone number.");
+    if (!numericAmount || numericAmount <= 0)
+      return setError("Enter a valid amount.");
+
+    sendMoney.mutate(
+      { recipientPhone: phone, amount: numericAmount },
+      {
+        onSuccess: () => router.push("/(tabs)" as any),
+        onError: () => setError("Send failed. Check the number and try again."),
+      },
     );
-  }
+  };
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-primary"
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.bg }}
+      contentContainerStyle={{ padding: spacing(4) }}
     >
-      <View className="flex-1" style={{ paddingTop: insets.top }}>
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: "700",
+          color: colors.textPrimary,
+          marginBottom: spacing(3),
+        }}
+      >
+        Send money
+      </Text>
 
-        {/* Header */}
-        <View className="px-6 pt-4 pb-6 flex-row items-center gap-4">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text className="text-accent text-2xl">←</Text>
-          </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">Send Money</Text>
-        </View>
-
-        <View className="px-6 flex-1">
-
-          {/* Balance */}
-          <View className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-8">
-            <Text className="text-gray-400 text-sm mb-1">Available Balance</Text>
-            <Text className="text-white text-3xl font-bold">
-              Rs. {Number(balance).toLocaleString("en-PK", { minimumFractionDigits: 2 })}
-            </Text>
-          </View>
-
-          {/* Recipient Phone */}
-          <Text className="text-gray-400 text-sm mb-2">Recipient Phone Number</Text>
-          <View className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 mb-5">
-            <TextInput
-              className="text-white text-base"
-              placeholder="+923001234567"
-              placeholderTextColor="#4B5563"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-              autoCorrect={false}
-            />
-          </View>
-
-          {/* Amount */}
-          <Text className="text-gray-400 text-sm mb-2">Amount</Text>
-          <View className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 flex-row items-center mb-5">
-            <Text className="text-gray-400 text-lg mr-2">Rs.</Text>
-            <TextInput
-              className="text-white text-2xl font-bold flex-1"
-              placeholder="0"
-              placeholderTextColor="#4B5563"
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={(v) => setAmount(v.replace(/[^0-9]/g, ""))}
-              maxLength={6}
-            />
-          </View>
-
-          {/* Description (optional) */}
-          <Text className="text-gray-400 text-sm mb-2">Note (optional)</Text>
-          <View className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 mb-8">
-            <TextInput
-              className="text-white text-base"
-              placeholder="What's this for?"
-              placeholderTextColor="#4B5563"
-              value={description}
-              onChangeText={setDescription}
-              maxLength={100}
-            />
-          </View>
-
-          {/* Send Button */}
-          <TouchableOpacity
-            className={`rounded-2xl py-4 items-center ${
-              !phone || !amount || isPending ? "bg-accent/40" : "bg-accent"
-            }`}
-            onPress={handleSend}
-            disabled={!phone || !amount || isPending}
+      {recentContacts.length > 0 && (
+        <>
+          <Text
+            style={{
+              fontSize: 11,
+              color: colors.textSecondary,
+              marginBottom: spacing(2),
+            }}
           >
-            {isPending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-white text-base font-bold">
-                {amount ? `Send Rs. ${Number(amount).toLocaleString()}` : "Enter Details"}
+            Send again to
+          </Text>
+          <View
+            style={{ flexDirection: "row", gap: 14, marginBottom: spacing(4) }}
+          >
+            {recentContacts.map((contact) => (
+              <Pressable
+                key={contact.phone}
+                style={{ alignItems: "center" }}
+                onPress={() => setPhone(contact.phone)}
+              >
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: colors.primarySoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "700",
+                      color: colors.primary,
+                    }}
+                  >
+                    {initials(contact.name)}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: colors.textSecondary,
+                    marginTop: 4,
+                  }}
+                >
+                  {contact.name.split(" ")[0]}
+                </Text>
+              </Pressable>
+            ))}
+            <View style={{ alignItems: "center" }}>
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: colors.surfaceAlt,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Plus size={16} color={colors.textSecondary} />
+              </View>
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: colors.textSecondary,
+                  marginTop: 4,
+                }}
+              >
+                New
               </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+            </View>
+          </View>
+        </>
+      )}
+
+      <Text
+        style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}
+      >
+        Recipient phone number
+      </Text>
+      <TextInput
+        value={phone}
+        onChangeText={setPhone}
+        placeholder="03XX-XXXXXXX"
+        keyboardType="phone-pad"
+        style={{
+          backgroundColor: colors.surfaceAlt,
+          borderRadius: radius.sm,
+          padding: spacing(3),
+          fontSize: 14,
+          color: colors.textPrimary,
+          marginBottom: spacing(3),
+        }}
+      />
+
+      <Text
+        style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}
+      >
+        Amount
+      </Text>
+      <TextInput
+        value={amount}
+        onChangeText={setAmount}
+        placeholder="Rs. 0"
+        keyboardType="numeric"
+        style={{
+          backgroundColor: colors.surfaceAlt,
+          borderRadius: radius.sm,
+          padding: spacing(3),
+          fontSize: 20,
+          fontWeight: "700",
+          color: colors.textPrimary,
+          marginBottom: spacing(3),
+        }}
+      />
+
+      {error && (
+        <Text
+          style={{
+            color: colors.danger,
+            fontSize: 12,
+            marginBottom: spacing(3),
+          }}
+        >
+          {error}
+        </Text>
+      )}
+
+      <Button
+        label="Send money"
+        onPress={handleSend}
+        loading={sendMoney.isPending}
+      />
+    </ScrollView>
   );
 }
