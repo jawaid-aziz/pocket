@@ -3,6 +3,7 @@ import { fetchMe, updateProfile, topUp } from "../account";
 import { useWalletStore } from "@/src/store/walletStore";
 import { useAuthStore } from "@/src/store/authStore";
 
+// useAccount.ts — fix useMe
 export function useMe() {
   const setBalance = useWalletStore((s) => s.setBalance);
   const setSession = useAuthStore((s) => s.setSession);
@@ -13,13 +14,13 @@ export function useMe() {
     queryKey: ["me"],
     queryFn: async () => {
       const data = await fetchMe();
-      const user = data.user;
-      setBalance(Number(user.balance));
+      const { balance, ...user } = data.user;
+      setBalance(Number(balance));
       setSession(user, accessToken!);
-      return user;
+      return data.user;
     },
     staleTime: 30_000,
-    enabled: !!accessToken && isAuthenticated, // ← add this
+    enabled: !!accessToken && isAuthenticated,
   });
 }
 
@@ -33,11 +34,13 @@ export function useUpdateProfile() {
 
 export function useTopUp() {
   const qc = useQueryClient();
-  const setBalance = useWalletStore((s) => s.setBalance);
   return useMutation({
     mutationFn: topUp,
-    onSuccess: (data) => {
-      setBalance(Number(data.balance));
+    // No setBalance here — topUp only returns a clientSecret.
+    // The wallet is credited later, asynchronously, when Stripe's webhook fires.
+    // We invalidate "me" here as a safety net (e.g. if the user navigates back
+    // to the dashboard before load.tsx's own invalidate+refetch finishes).
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
     },
   });
