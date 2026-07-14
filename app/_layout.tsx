@@ -1,5 +1,4 @@
 import "../global.css";
-import { useEffect, useState } from "react";
 import {
   DarkTheme,
   DefaultTheme,
