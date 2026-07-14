@@ -1,14 +1,13 @@
-import { View, Text, TextInput, ActivityIndicator } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, Text, TextInput, ActivityIndicator, ScrollView } from "react-native";
 import { useAuthStore } from "@/src/store/authStore";
 import { useMe, useUpdateProfile } from "@/src/api/hooks/useAccount";
 import { useState } from "react";
 import { Button } from "@/src/components/Button";
 import { Card } from "@/src/components/Card";
+import { ScreenHeader } from "@/src/components/ScreenHeader";
 import { colors, spacing, typography } from "@/src/theme/tokens";
 
 export default function SettingsScreen() {
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const { isLoading } = useMe();
   const { mutate: update, isPending } = useUpdateProfile();
@@ -16,15 +15,24 @@ export default function SettingsScreen() {
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [editing, setEditing] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   function handleSave() {
+    setSaveError(null);
     update(
       { name, email },
       {
         onSuccess: () => setEditing(false),
-        onError: () => {},
+        onError: () => setSaveError("Could not update profile. Please try again."),
       },
     );
+  }
+
+  function handleCancel() {
+    setName(user?.name || "");
+    setEmail(user?.email || "");
+    setSaveError(null);
+    setEditing(false);
   }
 
   if (isLoading) {
@@ -36,12 +44,15 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
-      <View style={{ paddingHorizontal: spacing(6), paddingTop: spacing(6) }}>
-        <Text style={{ ...typography.h1, fontSize: 22, marginBottom: spacing(6) }}>Settings</Text>
-
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScreenHeader title="Settings" />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: spacing(6), paddingBottom: spacing(10) }}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Avatar */}
-        <View style={{ alignItems: "center", marginBottom: spacing(8) }}>
+        <View style={{ alignItems: "center", marginBottom: spacing(8), marginTop: spacing(2) }}>
           <View
             style={{
               width: 80,
@@ -71,9 +82,9 @@ export default function SettingsScreen() {
               <TextInput
                 style={{
                   fontSize: 15,
-                  color: colors.textPrimary,
+                  color: editing ? colors.textPrimary : colors.textSecondary,
                   borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
+                  borderBottomColor: editing ? colors.primary : colors.border,
                   paddingVertical: 8,
                 }}
                 value={name}
@@ -89,9 +100,9 @@ export default function SettingsScreen() {
               <TextInput
                 style={{
                   fontSize: 15,
-                  color: colors.textPrimary,
+                  color: editing ? colors.textPrimary : colors.textSecondary,
                   borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
+                  borderBottomColor: editing ? colors.primary : colors.border,
                   paddingVertical: 8,
                 }}
                 value={email}
@@ -106,17 +117,21 @@ export default function SettingsScreen() {
 
             <View>
               <Text style={{ ...typography.caption, marginBottom: 4 }}>Phone</Text>
-              <Text style={{ fontSize: 15, color: colors.textPrimary, paddingVertical: 8 }}>
+              <Text style={{ fontSize: 15, color: colors.textSecondary, paddingVertical: 8 }}>
                 {user?.phone}
               </Text>
             </View>
           </View>
         </Card>
 
+        {saveError && (
+          <Text style={{ color: colors.danger, fontSize: 12, marginTop: spacing(3) }}>{saveError}</Text>
+        )}
+
         {editing ? (
           <View style={{ flexDirection: "row", gap: 12, marginTop: spacing(6) }}>
             <View style={{ flex: 1 }}>
-              <Button label="Cancel" variant="secondary" onPress={() => setEditing(false)} />
+              <Button label="Cancel" variant="secondary" onPress={handleCancel} disabled={isPending} />
             </View>
             <View style={{ flex: 1 }}>
               <Button label="Save" onPress={handleSave} loading={isPending} />
@@ -127,7 +142,7 @@ export default function SettingsScreen() {
             <Button label="Edit Profile" onPress={() => setEditing(true)} />
           </View>
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 }
