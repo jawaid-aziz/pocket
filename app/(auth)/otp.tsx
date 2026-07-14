@@ -3,15 +3,18 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useVerifyOtp } from "@/src/api/hooks/useAuth";
+import { Button } from "@/src/components/Button";
+import { colors, radius, spacing, typography } from "@/src/theme/tokens";
 
 export default function OtpScreen() {
+  const insets = useSafeAreaInsets();
   const { phone, purpose } = useLocalSearchParams<{
     phone: string;
     purpose: "SIGNUP" | "LOGIN_NEW_DEVICE";
@@ -50,26 +53,35 @@ export default function OtpScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-primary"
+      style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View className="flex-1 justify-center px-6">
-        <View className="mb-10">
-          <Text className="text-white text-2xl font-semibold">
-            Verify your number
-          </Text>
-          <Text className="text-gray-400 text-base mt-2">
+      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing(6) }}>
+        <View style={{ marginBottom: spacing(10) }}>
+          <Text style={{ ...typography.h1, fontSize: 22 }}>Verify your number</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 8, lineHeight: 20 }}>
             Enter the 6-digit code sent to{"\n"}
-            <Text className="text-white font-medium">{phone}</Text>
+            <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>{phone}</Text>
           </Text>
         </View>
 
-        <View className="mb-4">
+        <View style={{ marginBottom: spacing(4) }}>
           <TextInput
             ref={inputRef}
-            className="bg-white/10 border border-white/20 rounded-xl px-4 py-4 text-white text-2xl text-center tracking-widest"
+            style={{
+              backgroundColor: colors.surfaceAlt,
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: radius.sm + 2,
+              paddingHorizontal: spacing(4),
+              paddingVertical: spacing(4),
+              fontSize: 26,
+              color: colors.textPrimary,
+              textAlign: "center",
+              letterSpacing: 8,
+            }}
             placeholder="------"
-            placeholderTextColor="#374151"
+            placeholderTextColor={colors.textTertiary}
             keyboardType="number-pad"
             maxLength={6}
             value={otp}
@@ -79,33 +91,21 @@ export default function OtpScreen() {
             }}
           />
           {error ? (
-            <Text className="text-red-400 text-sm mt-2 text-center">
+            <Text style={{ color: colors.danger, fontSize: 12, marginTop: 8, textAlign: "center" }}>
               {error}
             </Text>
           ) : null}
         </View>
 
-        <TouchableOpacity
-          className={`rounded-xl py-4 items-center mt-2 ${
-            verifyOtp.isPending ? "bg-accent/50" : "bg-accent"
-          }`}
-          onPress={handleVerify}
-          disabled={verifyOtp.isPending}
-        >
-          {verifyOtp.isPending ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white text-base font-semibold">Verify</Text>
-          )}
-        </TouchableOpacity>
+        <Button label="Verify" onPress={handleVerify} loading={verifyOtp.isPending} />
 
-        <TouchableOpacity
-          className="mt-4 items-center"
+        <Pressable
           onPress={() => router.back()}
           disabled={verifyOtp.isPending}
+          style={{ marginTop: spacing(4), alignItems: "center" }}
         >
-          <Text className="text-gray-400 text-sm">← Wrong number? Go back</Text>
-        </TouchableOpacity>
+          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>← Wrong number? Go back</Text>
+        </Pressable>
       </View>
     </KeyboardAvoidingView>
   );

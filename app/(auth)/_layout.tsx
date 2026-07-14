@@ -8,7 +8,6 @@ export default function AuthLayout() {
       <Stack.Screen name="otp" />
       <Stack.Screen name="set-pin" />
       <Stack.Screen name="pin" />
-      <Stack.Screen name="signup" />
     </Stack>
   );
 }

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useMe } from '../../src/api/hooks/useAccount';
 import { useTransactions } from '../../src/api/hooks/useTransactions';
@@ -8,12 +8,16 @@ import { QuickActions } from '../../src/components/QuickActions';
 import { SoundBoxStatusCard } from '../../src/components/SoundBoxStatusCard';
 import { TransactionItem } from '../../src/components/TransactionItem';
 import { colors, spacing } from '../../src/theme/tokens';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 export default function DashboardScreen() {
+  const insets = useSafeAreaInsets();
   const { data: user, isLoading: userLoading, refetch: refetchMe } = useMe();
   const { data: transactions, isLoading: txLoading, refetch: refetchTx } = useTransactions();
   const balance = useWalletStore((s) => s.balance);
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -29,7 +33,7 @@ export default function DashboardScreen() {
       contentContainerStyle={{ paddingBottom: spacing(8) }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      <View style={{ paddingHorizontal: spacing(4), paddingTop: spacing(4) }}>
+      <View style={{ paddingHorizontal: spacing(4), paddingTop: insets.top + spacing(4) }}>
         <Text style={{ fontSize: 12, color: colors.textSecondary }}>Good evening</Text>
         <Text style={{ fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
           {userLoading ? 'Loading...' : user?.name ?? 'there'}
@@ -58,7 +62,9 @@ export default function DashboardScreen() {
         }}
       >
         <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>Recent activity</Text>
-        <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>See all</Text>
+        <Pressable onPress={() => router.push('/(tabs)/transactions' as any)}>
+          <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>See all</Text>
+        </Pressable>
       </View>
 
       <View style={{ paddingHorizontal: spacing(4), marginTop: spacing(2) }}>

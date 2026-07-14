@@ -7,6 +7,7 @@ import {
   useSendMoney,
 } from "../../src/api/hooks/useTransactions";
 import { Button } from "../../src/components/Button";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { colors, radius, spacing } from "../../src/theme/tokens";
 
 function initials(name: string) {
@@ -49,67 +50,87 @@ export default function SendScreen() {
     sendMoney.mutate(
       { recipientPhone: phone, amount: numericAmount },
       {
-        onSuccess: () => router.push("/(tabs)" as any),
+        onSuccess: () => {
+          setPhone("");
+          setAmount("");
+          router.push("/(tabs)" as any);
+        },
         onError: () => setError("Send failed. Check the number and try again."),
       },
     );
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ padding: spacing(4) }}
-    >
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "700",
-          color: colors.textPrimary,
-          marginBottom: spacing(3),
-        }}
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScreenHeader title="Send money" />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: spacing(4) }}
+        keyboardShouldPersistTaps="handled"
       >
-        Send money
-      </Text>
-
-      {recentContacts.length > 0 && (
-        <>
-          <Text
-            style={{
-              fontSize: 11,
-              color: colors.textSecondary,
-              marginBottom: spacing(2),
-            }}
-          >
-            Send again to
-          </Text>
-          <View
-            style={{ flexDirection: "row", gap: 14, marginBottom: spacing(4) }}
-          >
-            {recentContacts.map((contact) => (
-              <Pressable
-                key={contact.phone}
-                style={{ alignItems: "center" }}
-                onPress={() => setPhone(contact.phone)}
-              >
+        {recentContacts.length > 0 && (
+          <>
+            <Text
+              style={{
+                fontSize: 11,
+                color: colors.textSecondary,
+                marginBottom: spacing(2),
+              }}
+            >
+              Send again to
+            </Text>
+            <View
+              style={{ flexDirection: "row", gap: 14, marginBottom: spacing(4) }}
+            >
+              {recentContacts.map((contact) => (
+                <Pressable
+                  key={contact.phone}
+                  style={{ alignItems: "center" }}
+                  onPress={() => setPhone(contact.phone)}
+                >
+                  <View
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      backgroundColor: colors.primarySoft,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "700",
+                        color: colors.primary,
+                      }}
+                    >
+                      {initials(contact.name)}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: colors.textSecondary,
+                      marginTop: 4,
+                    }}
+                  >
+                    {contact.name.split(" ")[0]}
+                  </Text>
+                </Pressable>
+              ))}
+              <View style={{ alignItems: "center" }}>
                 <View
                   style={{
                     width: 44,
                     height: 44,
                     borderRadius: 22,
-                    backgroundColor: colors.primarySoft,
+                    backgroundColor: colors.surfaceAlt,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "700",
-                      color: colors.primary,
-                    }}
-                  >
-                    {initials(contact.name)}
-                  </Text>
+                  <Plus size={16} color={colors.textSecondary} />
                 </View>
                 <Text
                   style={{
@@ -118,95 +139,76 @@ export default function SendScreen() {
                     marginTop: 4,
                   }}
                 >
-                  {contact.name.split(" ")[0]}
+                  New
                 </Text>
-              </Pressable>
-            ))}
-            <View style={{ alignItems: "center" }}>
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: colors.surfaceAlt,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Plus size={16} color={colors.textSecondary} />
               </View>
-              <Text
-                style={{
-                  fontSize: 10,
-                  color: colors.textSecondary,
-                  marginTop: 4,
-                }}
-              >
-                New
-              </Text>
             </View>
-          </View>
-        </>
-      )}
+          </>
+        )}
 
-      <Text
-        style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}
-      >
-        Recipient phone number
-      </Text>
-      <TextInput
-        value={phone}
-        onChangeText={setPhone}
-        placeholder="03XX-XXXXXXX"
-        keyboardType="phone-pad"
-        style={{
-          backgroundColor: colors.surfaceAlt,
-          borderRadius: radius.sm,
-          padding: spacing(3),
-          fontSize: 14,
-          color: colors.textPrimary,
-          marginBottom: spacing(3),
-        }}
-      />
-
-      <Text
-        style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}
-      >
-        Amount
-      </Text>
-      <TextInput
-        value={amount}
-        onChangeText={setAmount}
-        placeholder="Rs. 0"
-        keyboardType="numeric"
-        style={{
-          backgroundColor: colors.surfaceAlt,
-          borderRadius: radius.sm,
-          padding: spacing(3),
-          fontSize: 20,
-          fontWeight: "700",
-          color: colors.textPrimary,
-          marginBottom: spacing(3),
-        }}
-      />
-
-      {error && (
         <Text
+          style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}
+        >
+          Recipient phone number
+        </Text>
+        <TextInput
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="03XX-XXXXXXX"
+          keyboardType="phone-pad"
           style={{
-            color: colors.danger,
-            fontSize: 12,
+            backgroundColor: colors.surfaceAlt,
+            borderRadius: radius.sm,
+            padding: spacing(3),
+            fontSize: 14,
+            color: colors.textPrimary,
             marginBottom: spacing(3),
           }}
-        >
-          {error}
-        </Text>
-      )}
+        />
 
-      <Button
-        label="Send money"
-        onPress={handleSend}
-        loading={sendMoney.isPending}
-      />
-    </ScrollView>
+        <Text
+          style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}
+        >
+          Amount
+        </Text>
+        <TextInput
+          value={amount}
+          onChangeText={setAmount}
+          placeholder="Rs. 0"
+          keyboardType="numeric"
+          style={{
+            backgroundColor: colors.surfaceAlt,
+            borderRadius: radius.sm,
+            padding: spacing(3),
+            fontSize: 20,
+            fontWeight: "700",
+            color: colors.textPrimary,
+            marginBottom: spacing(3),
+          }}
+        />
+
+        {error && (
+          <Text
+            style={{
+              color: colors.danger,
+              fontSize: 12,
+              marginBottom: spacing(3),
+            }}
+          >
+            {error}
+          </Text>
+        )}
+
+        <Button
+          label="Send money"
+          onPress={handleSend}
+          loading={sendMoney.isPending}
+        />
+
+        <Text style={{ fontSize: 11, color: colors.textTertiary, marginTop: spacing(3), textAlign: "center" }}>
+          Internal transfers settle instantly as a closed-loop ledger entry — no Stripe involved.
+        </Text>
+      </ScrollView>
+    </View>
   );
 }

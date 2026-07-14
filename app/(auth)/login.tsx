@@ -3,22 +3,22 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRequestOtp } from "@/src/api/hooks/useAuth";
+import { Button } from "@/src/components/Button";
+import { colors, radius, spacing, typography } from "@/src/theme/tokens";
 
 function toE164(phone: string): string {
-  // Strip spaces, dashes, brackets
   const digits = phone.replace(/\D/g, "");
-  // 03XXXXXXXXX → +923XXXXXXXXX
   if (digits.startsWith("0") && digits.length === 11) {
     return "+92" + digits.slice(1);
   }
-  return "+" + digits; // fallback, already formatted
+  return "+" + digits;
 }
 
 function isValidPakistaniNumber(phone: string): boolean {
@@ -27,11 +27,16 @@ function isValidPakistaniNumber(phone: string): boolean {
 }
 
 export default function LoginScreen() {
+  const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const requestOtp = useRequestOtp();
 
-  async function handleContinue() {
+  function goToOtp(e164: string, purpose: "SIGNUP" | "LOGIN_NEW_DEVICE") {
+    router.push({ pathname: "/otp" as any, params: { phone: e164, purpose } });
+  }
+
+  function handleContinue() {
     setError("");
 
     if (!isValidPakistaniNumber(phone)) {
@@ -44,26 +49,14 @@ export default function LoginScreen() {
     requestOtp.mutate(
       { phone: e164, purpose: "SIGNUP" },
       {
-        onSuccess: () => {
-          router.push({
-            pathname: "/otp" as any,
-            params: { phone: e164, purpose: "SIGNUP" },
-          });
-        },
+        onSuccess: () => goToOtp(e164, "SIGNUP"),
         onError: (err: any) => {
-          // 409 = phone already registered → redirect to login flow
           if (err.status === 409) {
             requestOtp.mutate(
               { phone: e164, purpose: "LOGIN_NEW_DEVICE" },
               {
-                onSuccess: () => {
-                  router.push({
-                    pathname: "/otp" as any,
-                    params: { phone: e164, purpose: "LOGIN_NEW_DEVICE" },
-                  });
-                },
-                onError: (e: any) =>
-                  setError(e.message || "Failed to send OTP"),
+                onSuccess: () => goToOtp(e164, "LOGIN_NEW_DEVICE"),
+                onError: (e: any) => setError(e.message || "Failed to send OTP"),
               },
             );
           } else {
@@ -76,28 +69,41 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-primary"
+      style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View className="flex-1 justify-center px-6">
+      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing(6) }}>
         {/* Header */}
-        <View className="mb-10">
-          <Text className="text-accent text-4xl font-bold mb-2">Pocket</Text>
-          <Text className="text-white text-2xl font-semibold">Welcome</Text>
-          <Text className="text-gray-400 text-base mt-1">
+        <View style={{ marginBottom: spacing(10) }}>
+          <Text style={{ color: colors.primary, fontSize: 34, fontWeight: "800", marginBottom: 6 }}>
+            Pocket
+          </Text>
+          <Text style={{ ...typography.h1, fontSize: 22 }}>Welcome</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 4 }}>
             Enter your phone number to continue
           </Text>
         </View>
 
-        {/* Phone Input */}
-        <View className="mb-4">
-          <Text className="text-gray-400 text-sm mb-2">Phone Number</Text>
-          <View className="flex-row items-center bg-white/10 rounded-xl px-4 py-3 border border-white/20">
-            <Text className="text-white text-base mr-2">🇵🇰</Text>
+        {/* Phone input */}
+        <View style={{ marginBottom: spacing(4) }}>
+          <Text style={{ ...typography.caption, marginBottom: 8 }}>Phone Number</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: colors.surfaceAlt,
+              borderRadius: radius.sm + 2,
+              paddingHorizontal: spacing(4),
+              paddingVertical: spacing(3),
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <Text style={{ fontSize: 15, marginRight: 8 }}>🇵🇰</Text>
             <TextInput
-              className="flex-1 text-white text-base"
+              style={{ flex: 1, fontSize: 15, color: colors.textPrimary }}
               placeholder="03XX-XXXXXXX"
-              placeholderTextColor="#6B7280"
+              placeholderTextColor={colors.textTertiary}
               keyboardType="phone-pad"
               value={phone}
               onChangeText={(text) => {
@@ -109,27 +115,25 @@ export default function LoginScreen() {
             />
           </View>
           {error ? (
-            <Text className="text-red-400 text-sm mt-2">{error}</Text>
+            <Text style={{ color: colors.danger, fontSize: 12, marginTop: 8 }}>{error}</Text>
           ) : null}
         </View>
 
-        {/* Continue Button */}
-        <TouchableOpacity
-          className={`rounded-xl py-4 items-center mt-2 ${
-            requestOtp.isPending ? "bg-accent/50" : "bg-accent"
-          }`}
+        <Button
+          label="Continue"
           onPress={handleContinue}
-          disabled={requestOtp.isPending}
-        >
-          {requestOtp.isPending ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white text-base font-semibold">Continue</Text>
-          )}
-        </TouchableOpacity>
+          loading={requestOtp.isPending}
+        />
 
-        {/* Footer note */}
-        <Text className="text-gray-500 text-xs text-center mt-6">
+        <Text
+          style={{
+            color: colors.textTertiary,
+            fontSize: 11,
+            textAlign: "center",
+            marginTop: spacing(6),
+            lineHeight: 16,
+          }}
+        >
           New users will be registered automatically.{"\n"}
           Existing users will receive a login code.
         </Text>

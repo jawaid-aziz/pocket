@@ -1,8 +1,11 @@
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/src/store/authStore";
 import { useMe, useUpdateProfile } from "@/src/api/hooks/useAccount";
 import { useState } from "react";
+import { Button } from "@/src/components/Button";
+import { Card } from "@/src/components/Card";
+import { colors, spacing, typography } from "@/src/theme/tokens";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -18,100 +21,111 @@ export default function SettingsScreen() {
     update(
       { name, email },
       {
-        onSuccess: () => {
-          setEditing(false);
-          Alert.alert("Saved", "Profile updated successfully");
-        },
-        onError: () => Alert.alert("Error", "Could not update profile"),
-      }
+        onSuccess: () => setEditing(false),
+        onError: () => {},
+      },
     );
   }
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-primary items-center justify-center">
-        <ActivityIndicator color="#10B981" />
+      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-primary" style={{ paddingTop: insets.top }}>
-      <View className="px-6 pt-6">
-        <Text className="text-white text-2xl font-bold mb-6">Settings</Text>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
+      <View style={{ paddingHorizontal: spacing(6), paddingTop: spacing(6) }}>
+        <Text style={{ ...typography.h1, fontSize: 22, marginBottom: spacing(6) }}>Settings</Text>
 
         {/* Avatar */}
-        <View className="items-center mb-8">
-          <View className="w-20 h-20 rounded-full bg-accent/20 items-center justify-center mb-3">
-            <Text className="text-accent font-bold text-3xl">
+        <View style={{ alignItems: "center", marginBottom: spacing(8) }}>
+          <View
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: colors.primarySoft,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: spacing(3),
+            }}
+          >
+            <Text style={{ color: colors.primary, fontWeight: "800", fontSize: 30 }}>
               {(user?.name || user?.phone || "U")[0].toUpperCase()}
             </Text>
           </View>
-          <Text className="text-white text-lg font-semibold">{user?.name || "—"}</Text>
-          <Text className="text-gray-400 text-sm">{user?.phone}</Text>
+          <Text style={{ fontSize: 17, fontWeight: "700", color: colors.textPrimary }}>
+            {user?.name || "—"}
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>{user?.phone}</Text>
         </View>
 
         {/* Fields */}
-        <View className="bg-white/5 rounded-2xl p-5 gap-4">
-          <View>
-            <Text className="text-gray-400 text-xs mb-1">Full Name</Text>
-            <TextInput
-              className="text-white text-base border-b border-white/10 py-2"
-              value={name}
-              onChangeText={setName}
-              editable={editing}
-              placeholderTextColor="#6B7280"
-              placeholder="Enter your name"
-            />
-          </View>
+        <Card>
+          <View style={{ gap: spacing(4) }}>
+            <View>
+              <Text style={{ ...typography.caption, marginBottom: 4 }}>Full Name</Text>
+              <TextInput
+                style={{
+                  fontSize: 15,
+                  color: colors.textPrimary,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.border,
+                  paddingVertical: 8,
+                }}
+                value={name}
+                onChangeText={setName}
+                editable={editing}
+                placeholderTextColor={colors.textTertiary}
+                placeholder="Enter your name"
+              />
+            </View>
 
-          <View>
-            <Text className="text-gray-400 text-xs mb-1">Email</Text>
-            <TextInput
-              className="text-white text-base border-b border-white/10 py-2"
-              value={email}
-              onChangeText={setEmail}
-              editable={editing}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor="#6B7280"
-              placeholder="Enter your email"
-            />
-          </View>
+            <View>
+              <Text style={{ ...typography.caption, marginBottom: 4 }}>Email</Text>
+              <TextInput
+                style={{
+                  fontSize: 15,
+                  color: colors.textPrimary,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.border,
+                  paddingVertical: 8,
+                }}
+                value={email}
+                onChangeText={setEmail}
+                editable={editing}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor={colors.textTertiary}
+                placeholder="Enter your email"
+              />
+            </View>
 
-          <View>
-            <Text className="text-gray-400 text-xs mb-1">Phone</Text>
-            <Text className="text-white text-base py-2">{user?.phone}</Text>
+            <View>
+              <Text style={{ ...typography.caption, marginBottom: 4 }}>Phone</Text>
+              <Text style={{ fontSize: 15, color: colors.textPrimary, paddingVertical: 8 }}>
+                {user?.phone}
+              </Text>
+            </View>
           </View>
-        </View>
+        </Card>
 
-        {/* Edit / Save button */}
         {editing ? (
-          <View className="flex-row gap-3 mt-6">
-            <TouchableOpacity
-              className="flex-1 bg-white/10 rounded-2xl py-4 items-center"
-              onPress={() => setEditing(false)}
-            >
-              <Text className="text-white font-semibold">Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="flex-1 bg-accent rounded-2xl py-4 items-center"
-              onPress={handleSave}
-              disabled={isPending}
-            >
-              {isPending
-                ? <ActivityIndicator color="#fff" />
-                : <Text className="text-white font-semibold">Save</Text>
-              }
-            </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 12, marginTop: spacing(6) }}>
+            <View style={{ flex: 1 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setEditing(false)} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label="Save" onPress={handleSave} loading={isPending} />
+            </View>
           </View>
         ) : (
-          <TouchableOpacity
-            className="mt-6 bg-accent rounded-2xl py-4 items-center"
-            onPress={() => setEditing(true)}
-          >
-            <Text className="text-white font-semibold">Edit Profile</Text>
-          </TouchableOpacity>
+          <View style={{ marginTop: spacing(6) }}>
+            <Button label="Edit Profile" onPress={() => setEditing(true)} />
+          </View>
         )}
       </View>
     </View>
