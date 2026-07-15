@@ -13,11 +13,13 @@ type Step = "enter" | "confirm";
 
 export default function SetPinScreen() {
   const insets = useSafeAreaInsets();
-  const { phone, purpose, otpToken } = useLocalSearchParams<{
-    phone: string;
-    purpose: "SIGNUP" | "LOGIN_NEW_DEVICE";
-    otpToken: string;
-  }>();
+
+const { phone, purpose, email, otpToken } = useLocalSearchParams<{
+  phone: string;
+  purpose: "SIGNUP" | "LOGIN_NEW_DEVICE";
+  email: string;
+  otpToken: string;
+}>();
 
   const [step, setStep] = useState<Step>("enter");
   const [pin, setPin] = useState("");
@@ -58,9 +60,22 @@ export default function SetPinScreen() {
     setCurrentPin(currentPin.slice(0, -1));
   }
 
-  function submitWithPin(finalPin: string) {
-    const mutation = purpose === "SIGNUP" ? signup : loginNewDevice;
-    mutation.mutate(
+function submitWithPin(finalPin: string) {
+  if (purpose === "SIGNUP") {
+    signup.mutate(
+      { phone, email, otpToken, pin: finalPin },
+      {
+        onSuccess: () => router.replace("/(tabs)" as any),
+        onError: (err: any) => {
+          setError(err.message || "Something went wrong");
+          setPin("");
+          setConfirmPin("");
+          setStep("enter");
+        },
+      },
+    );
+  } else {
+    loginNewDevice.mutate(
       { phone, otpToken, pin: finalPin },
       {
         onSuccess: () => router.replace("/(tabs)" as any),
@@ -73,6 +88,7 @@ export default function SetPinScreen() {
       },
     );
   }
+}
 
   return (
     <View

@@ -29,11 +29,23 @@ function isValidPakistaniNumber(phone: string): boolean {
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const requestOtp = useRequestOtp();
 
-  function goToOtp(e164: string, purpose: "SIGNUP" | "LOGIN_NEW_DEVICE") {
-    router.push({ pathname: "/otp" as any, params: { phone: e164, purpose } });
+  function isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function goToOtp(
+    e164: string,
+    purpose: "SIGNUP" | "LOGIN_NEW_DEVICE",
+    email?: string,
+  ) {
+    router.push({
+      pathname: "/otp" as any,
+      params: { phone: e164, purpose, email: email || "" },
+    });
   }
 
   function handleContinue() {
@@ -46,17 +58,25 @@ export default function LoginScreen() {
 
     const e164 = toE164(phone);
 
+    // Try signup first — if phone already exists (409), fall back to login,
+    // which doesn't need email since the backend already has it on file.
+    if (!isValidEmail(email)) {
+      setError("Enter a valid email address");
+      return;
+    }
+
     requestOtp.mutate(
-      { phone: e164, purpose: "SIGNUP" },
+      { phone: e164, purpose: "SIGNUP", email },
       {
-        onSuccess: () => goToOtp(e164, "SIGNUP"),
+        onSuccess: () => goToOtp(e164, "SIGNUP", email),
         onError: (err: any) => {
           if (err.status === 409) {
             requestOtp.mutate(
               { phone: e164, purpose: "LOGIN_NEW_DEVICE" },
               {
                 onSuccess: () => goToOtp(e164, "LOGIN_NEW_DEVICE"),
-                onError: (e: any) => setError(e.message || "Failed to send OTP"),
+                onError: (e: any) =>
+                  setError(e.message || "Failed to send OTP"),
               },
             );
           } else {
@@ -72,21 +92,38 @@ export default function LoginScreen() {
       style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing(6) }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          paddingHorizontal: spacing(6),
+        }}
+      >
         {/* Header */}
         <View style={{ marginBottom: spacing(10) }}>
-          <Text style={{ color: colors.primary, fontSize: 34, fontWeight: "800", marginBottom: 6 }}>
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: 34,
+              fontWeight: "800",
+              marginBottom: 6,
+            }}
+          >
             Pocket
           </Text>
           <Text style={{ ...typography.h1, fontSize: 22 }}>Welcome</Text>
-          <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 4 }}>
+          <Text
+            style={{ color: colors.textSecondary, fontSize: 14, marginTop: 4 }}
+          >
             Enter your phone number to continue
           </Text>
         </View>
 
         {/* Phone input */}
         <View style={{ marginBottom: spacing(4) }}>
-          <Text style={{ ...typography.caption, marginBottom: 8 }}>Phone Number</Text>
+          <Text style={{ ...typography.caption, marginBottom: 8 }}>
+            Phone Number
+          </Text>
           <View
             style={{
               flexDirection: "row",
@@ -115,8 +152,38 @@ export default function LoginScreen() {
             />
           </View>
           {error ? (
-            <Text style={{ color: colors.danger, fontSize: 12, marginTop: 8 }}>{error}</Text>
+            <Text style={{ color: colors.danger, fontSize: 12, marginTop: 8 }}>
+              {error}
+            </Text>
           ) : null}
+        </View>
+
+        <View style={{ marginBottom: spacing(4) }}>
+          <Text style={{ ...typography.caption, marginBottom: 8 }}>Email</Text>
+          <View
+            style={{
+              backgroundColor: colors.surfaceAlt,
+              borderRadius: radius.sm + 2,
+              paddingHorizontal: spacing(4),
+              paddingVertical: spacing(3),
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <TextInput
+              style={{ fontSize: 15, color: colors.textPrimary }}
+              placeholder="you@example.com"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={email}
+              onChangeText={(text) => {
+                setError("");
+                setEmail(text);
+              }}
+            />
+          </View>
         </View>
 
         <Button

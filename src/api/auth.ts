@@ -16,12 +16,13 @@ interface AuthResponse {
 export function requestOtp(
   phone: string,
   purpose: "SIGNUP" | "LOGIN_NEW_DEVICE",
+  email?: string,
 ) {
-  return apiClient<{ message: string; sid: string; status: string }>(
+  return apiClient<{ message: string }>(
     "/api/auth/otp/request",
     {
       method: "POST",
-      body: JSON.stringify({ phone, purpose }),
+      body: JSON.stringify({ phone, purpose, email }),
     },
   );
 }
@@ -39,6 +40,7 @@ export function verifyOtp(params: {
 
 export function signup(params: {
   phone: string;
+  email: string;
   otpToken: string;
   pin: string;
   name?: string;

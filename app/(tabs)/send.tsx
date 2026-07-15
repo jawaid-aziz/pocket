@@ -39,26 +39,53 @@ export default function SendScreen() {
     return Array.from(seen.values()).slice(0, 2);
   }, [transactions]);
 
-  const handleSend = () => {
-    setError(null);
-    const numericAmount = Number(amount);
+  // add near the top of send.tsx, alongside other helpers
+function toE164(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("0") && digits.length === 11) {
+    return "+92" + digits.slice(1);
+  }
+  if (digits.startsWith("92") && digits.length === 12) {
+    return "+" + digits;
+  }
+  return "+" + digits; // fallback
+}
 
-    if (!phone.trim()) return setError("Enter a recipient phone number.");
-    if (!numericAmount || numericAmount <= 0)
-      return setError("Enter a valid amount.");
+function isValidPakistaniNumber(phone: string): boolean {
+  const digits = phone.replace(/\D/g, "");
+  return /^0[3][0-9]{9}$/.test(digits) || /^92[3][0-9]{9}$/.test(digits);
+}
 
-    sendMoney.mutate(
-      { recipientPhone: phone, amount: numericAmount },
-      {
-        onSuccess: () => {
-          setPhone("");
-          setAmount("");
-          router.push("/(tabs)" as any);
-        },
-        onError: () => setError("Send failed. Check the number and try again."),
+const handleSend = () => {
+  setError(null);
+
+  if (!isValidPakistaniNumber(phone)) {
+    return setError("Enter a valid Pakistani number (03XX-XXXXXXX).");
+  }
+
+  const numericAmount = Number(amount);
+  if (!numericAmount || numericAmount <= 0) return setError("Enter a valid amount.");
+
+  const e164Phone = toE164(phone);
+
+  sendMoney.mutate(
+    { recipientPhone: e164Phone, amount: numericAmount },
+    {
+      onSuccess: () => {
+        setPhone("");
+        setAmount("");
+        router.push("/(tabs)" as any);
       },
-    );
-  };
+      onError: (err: any) => {
+        if (err.status === 404) {
+          setError("No account found with that phone number.");
+        } else {
+          setError("Send failed. Please try again.");
+        }
+      },
+    },
+  );
+};
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>

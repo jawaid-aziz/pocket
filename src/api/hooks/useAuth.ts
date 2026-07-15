@@ -10,10 +10,12 @@ export function useRequestOtp() {
     mutationFn: ({
       phone,
       purpose,
+      email,
     }: {
       phone: string;
       purpose: "SIGNUP" | "LOGIN_NEW_DEVICE";
-    }) => authApi.requestOtp(phone, purpose),
+      email?: string;
+    }) => authApi.requestOtp(phone, purpose, email),
   });
 }
 
