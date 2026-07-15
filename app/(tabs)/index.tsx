@@ -7,7 +7,7 @@ import { BalanceCard } from '../../src/components/BalanceCard';
 import { QuickActions } from '../../src/components/QuickActions';
 import { SoundBoxStatusCard } from '../../src/components/SoundBoxStatusCard';
 import { TransactionItem } from '../../src/components/TransactionItem';
-import { colors, spacing } from '../../src/theme/tokens';
+import { colors, spacing, typography } from '../../src/theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -34,10 +34,10 @@ export default function DashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
       <View style={{ paddingHorizontal: spacing(4), paddingTop: insets.top + spacing(4) }}>
-        <Text style={{ fontSize: 12, color: colors.textSecondary }}>Good evening</Text>
-        <Text style={{ fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
-          {userLoading ? 'Loading...' : user?.name ?? 'there'}
-        </Text>
+<Text style={{ ...typography.caption }}>Good evening</Text>
+<Text style={{ ...typography.h2, marginTop: 2 }}>
+  {userLoading ? 'Loading...' : user?.name ?? 'there'}
+</Text>
       </View>
 
       <View style={{ paddingHorizontal: spacing(4), marginTop: spacing(2) }}>

@@ -13,13 +13,12 @@ type Step = "enter" | "confirm";
 
 export default function SetPinScreen() {
   const insets = useSafeAreaInsets();
-
-const { phone, purpose, email, otpToken } = useLocalSearchParams<{
-  phone: string;
-  purpose: "SIGNUP" | "LOGIN_NEW_DEVICE";
-  email: string;
-  otpToken: string;
-}>();
+  const { phone, purpose, email, otpToken } = useLocalSearchParams<{
+    phone: string;
+    purpose: "SIGNUP" | "LOGIN_NEW_DEVICE";
+    email: string;
+    otpToken: string;
+  }>();
 
   const [step, setStep] = useState<Step>("enter");
   const [pin, setPin] = useState("");
@@ -60,35 +59,35 @@ const { phone, purpose, email, otpToken } = useLocalSearchParams<{
     setCurrentPin(currentPin.slice(0, -1));
   }
 
-function submitWithPin(finalPin: string) {
-  if (purpose === "SIGNUP") {
-    signup.mutate(
-      { phone, email, otpToken, pin: finalPin },
-      {
-        onSuccess: () => router.replace("/(tabs)" as any),
-        onError: (err: any) => {
-          setError(err.message || "Something went wrong");
-          setPin("");
-          setConfirmPin("");
-          setStep("enter");
+  function submitWithPin(finalPin: string) {
+    if (purpose === "SIGNUP") {
+      signup.mutate(
+        { phone, email, otpToken, pin: finalPin },
+        {
+          onSuccess: () => router.replace("/(tabs)" as any),
+          onError: (err: any) => {
+            setError(err.message || "Something went wrong");
+            setPin("");
+            setConfirmPin("");
+            setStep("enter");
+          },
         },
-      },
-    );
-  } else {
-    loginNewDevice.mutate(
-      { phone, otpToken, pin: finalPin },
-      {
-        onSuccess: () => router.replace("/(tabs)" as any),
-        onError: (err: any) => {
-          setError(err.message || "Something went wrong");
-          setPin("");
-          setConfirmPin("");
-          setStep("enter");
+      );
+    } else {
+      loginNewDevice.mutate(
+        { phone, otpToken, pin: finalPin },
+        {
+          onSuccess: () => router.replace("/(tabs)" as any),
+          onError: (err: any) => {
+            setError(err.message || "Something went wrong");
+            setPin("");
+            setConfirmPin("");
+            setStep("enter");
+          },
         },
-      },
-    );
+      );
+    }
   }
-}
 
   return (
     <View
@@ -102,7 +101,7 @@ function submitWithPin(finalPin: string) {
       }}
     >
       <View style={{ alignItems: "center", marginBottom: spacing(2) }}>
-        <Text style={{ ...typography.h1, fontSize: 19 }}>
+        <Text style={typography.h1}>
           {step === "enter" ? "Set your PIN" : "Confirm your PIN"}
         </Text>
         <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 8, textAlign: "center" }}>

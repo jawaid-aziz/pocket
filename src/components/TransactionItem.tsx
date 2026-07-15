@@ -1,7 +1,7 @@
 // components/TransactionItem.tsx
 import { View, Text } from 'react-native';
 import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react-native';
-import { colors, spacing, txColors, TxKind } from '../theme/tokens';
+import { colors, spacing, typography, txColors, TxKind } from '../theme/tokens';
 
 export type BackendTransaction = {
   id: string;
@@ -31,7 +31,8 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs} hr ago`;
   const days = Math.floor(hrs / 24);
   if (days === 1) return 'Yesterday';
-  return `${days} days ago`;
+  if (days < 7) return `${days} days ago`;
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 const icons: Record<TxKind, React.ComponentType<any>> = {
@@ -71,11 +72,11 @@ export function TransactionItem({ tx }: { tx: BackendTransaction }) {
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>{toLabel(tx)}</Text>
-        <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{timeAgo(tx.createdAt)}</Text>
+        <Text style={{ ...typography.bodyStrong }}>{toLabel(tx)}</Text>
+        <Text style={{ ...typography.caption, marginTop: 2 }}>{timeAgo(tx.createdAt)}</Text>
       </View>
 
-      <Text style={{ fontSize: 14, fontWeight: '700', color: fg }}>
+      <Text style={{ ...typography.bodyStrong, color: fg }}>
         {sign}Rs. {amount.toLocaleString()}
       </Text>
     </View>

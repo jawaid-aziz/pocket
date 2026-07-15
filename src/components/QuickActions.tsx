@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from 'react-native';
 import { ArrowDown, ArrowUp, QrCode, Receipt } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '../theme/tokens';
+import { colors, typography } from '../theme/tokens';
 
 type Action = {
   label: string;
@@ -25,7 +25,8 @@ export function QuickActions() {
       {actions.map(({ label, icon: Icon, onPress, comingSoon }) => (
         <Pressable
           key={label}
-          onPress={onPress}
+          onPress={comingSoon ? undefined : onPress}
+          disabled={comingSoon}
           style={{ alignItems: 'center', gap: 4, opacity: comingSoon ? 0.5 : 1 }}
           accessibilityLabel={comingSoon ? `${label} - coming soon` : label}
         >
@@ -41,7 +42,7 @@ export function QuickActions() {
           >
             <Icon size={18} color={colors.primary} />
           </View>
-          <Text style={{ fontSize: 10, color: colors.textPrimary, fontWeight: '500' }}>{label}</Text>
+          <Text style={{ ...typography.micro }}>{label}</Text>
         </Pressable>
       ))}
     </View>

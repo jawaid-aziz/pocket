@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native';
 import { Volume2 } from 'lucide-react-native';
-import { colors, radius, spacing } from '../theme/tokens';
+import { colors, radius, spacing, typography } from '../theme/tokens';
 
 type Props = {
   deviceName: string;
@@ -35,7 +35,7 @@ export function SoundBoxStatusCard({ deviceName, online, lastAnnouncement }: Pro
 
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={{ fontWeight: '700', fontSize: 13, color: colors.textPrimary }}>{deviceName}</Text>
+          <Text style={{ ...typography.captionStrong, color: colors.textPrimary }}>{deviceName}</Text>
           <View
             style={{
               width: 6,
@@ -44,12 +44,12 @@ export function SoundBoxStatusCard({ deviceName, online, lastAnnouncement }: Pro
               backgroundColor: online ? colors.primary : colors.textTertiary,
             }}
           />
-          <Text style={{ fontSize: 11, color: online ? colors.primary : colors.textTertiary }}>
+          <Text style={{ ...typography.micro, fontWeight: '500', color: online ? colors.primary : colors.textTertiary }}>
             {online ? 'Online' : 'Offline'}
           </Text>
         </View>
         {lastAnnouncement ? (
-          <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>{lastAnnouncement}</Text>
+          <Text style={{ ...typography.micro, color: colors.textSecondary, marginTop: 2 }}>{lastAnnouncement}</Text>
         ) : null}
       </View>
     </View>

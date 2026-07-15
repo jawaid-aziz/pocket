@@ -2,7 +2,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "../theme/tokens";
+import { colors, spacing, typography } from "../theme/tokens";
 
 export function ScreenHeader({ title }: { title: string }) {
   const router = useRouter();
@@ -33,7 +33,7 @@ export function ScreenHeader({ title }: { title: string }) {
       >
         <ChevronLeft size={20} color={colors.textPrimary} />
       </Pressable>
-      <Text style={{ fontSize: 16, fontWeight: "700", color: colors.textPrimary }}>{title}</Text>
+      <Text style={{ ...typography.h2 }}>{title}</Text>
     </View>
   );
 }

@@ -39,10 +39,13 @@ export const shadow = {
 };
 
 export const typography = {
-  h1: { fontSize: 28, fontWeight: '700' as const, color: colors.textPrimary },
+  h1: { fontSize: 22, fontWeight: '700' as const, color: colors.textPrimary },
   h2: { fontSize: 17, fontWeight: '700' as const, color: colors.textPrimary },
   body: { fontSize: 15, fontWeight: '400' as const, color: colors.textPrimary },
+  bodyStrong: { fontSize: 15, fontWeight: '700' as const, color: colors.textPrimary },
   caption: { fontSize: 12, fontWeight: '500' as const, color: colors.textSecondary },
+  captionStrong: { fontSize: 12, fontWeight: '700' as const, color: colors.textSecondary },
+  micro: { fontSize: 10, fontWeight: '500' as const, color: colors.textPrimary },
   amountLg: { fontSize: 30, fontWeight: '800' as const, color: colors.onPrimary, letterSpacing: -0.5 },
 };
 
