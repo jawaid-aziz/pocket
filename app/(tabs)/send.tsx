@@ -155,6 +155,7 @@ export default function SendScreen() {
           value={phone}
           onChangeText={setPhone}
           placeholder="03XX-XXXXXXX"
+          placeholderTextColor={colors.textTertiary}
           keyboardType="phone-pad"
           style={{
             backgroundColor: colors.surfaceAlt,
@@ -175,6 +176,7 @@ export default function SendScreen() {
           value={amount}
           onChangeText={setAmount}
           placeholder="Rs. 0"
+          placeholderTextColor={colors.textTertiary}
           keyboardType="numeric"
           style={{
             backgroundColor: colors.surfaceAlt,

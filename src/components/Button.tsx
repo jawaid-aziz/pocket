@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   PressableProps,
 } from "react-native";
+import { useState } from "react";
 import { colors, radius, spacing } from "../theme/tokens";
 
 type Variant = "primary" | "secondary" | "danger";
@@ -31,23 +32,36 @@ export function Button({
   fullWidth = true,
   disabled,
   style,
+  onPressIn,
+  onPressOut,
   ...rest
 }: ButtonProps) {
   const v = variantStyles[variant];
+  const [pressed, setPressed] = useState(false);
+  const isDisabled = disabled || loading;
+
   return (
     <Pressable
-      disabled={disabled || loading}
-      style={(state) => [
+      disabled={isDisabled}
+      onPressIn={(e) => {
+        setPressed(true);
+        onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        setPressed(false);
+        onPressOut?.(e);
+      }}
+      style={[
         {
           backgroundColor: v.bg,
           borderRadius: radius.sm + 2,
           paddingVertical: spacing(3) + 2,
           alignItems: "center",
           justifyContent: "center",
-          opacity: disabled ? 0.5 : state.pressed ? 0.85 : 1,
+          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
           width: fullWidth ? "100%" : undefined,
         },
-        typeof style === "function" ? style(state) : style,
+        style as any,
       ]}
       {...rest}
     >

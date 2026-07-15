@@ -1,4 +1,5 @@
 import { View, Text, Pressable } from "react-native";
+import { useState } from "react";
 import { colors, radius } from "@/src/theme/tokens";
 
 interface PinPadProps {
@@ -7,6 +8,27 @@ interface PinPadProps {
 }
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
+
+function PinKey({ label, onPress }: { label: string; onPress: () => void }) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={{
+        width: 64,
+        height: 56,
+        borderRadius: radius.md,
+        backgroundColor: pressed ? colors.primarySoftStrong : colors.surfaceAlt,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text style={{ fontSize: 22, fontWeight: "600", color: colors.textPrimary }}>{label}</Text>
+    </Pressable>
+  );
+}
 
 export default function PinPad({ onPress, onDelete }: PinPadProps) {
   return (
@@ -18,19 +40,7 @@ export default function PinPad({ onPress, onDelete }: PinPadProps) {
               {key === "" ? (
                 <View style={{ width: 64, height: 56 }} />
               ) : (
-                <Pressable
-                  onPress={() => (key === "⌫" ? onDelete() : onPress(key))}
-                  style={({ pressed }) => ({
-                    width: 64,
-                    height: 56,
-                    borderRadius: radius.md,
-                    backgroundColor: pressed ? colors.primarySoftStrong : colors.surfaceAlt,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  })}
-                >
-                  <Text style={{ fontSize: 22, fontWeight: "600", color: colors.textPrimary }}>{key}</Text>
-                </Pressable>
+                <PinKey label={key} onPress={() => (key === "⌫" ? onDelete() : onPress(key))} />
               )}
             </View>
           ))}
