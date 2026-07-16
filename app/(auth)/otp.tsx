@@ -61,8 +61,8 @@ export default function OtpScreen() {
         <View style={{ marginBottom: spacing(10) }}>
           <Text style={typography.h1}>Verify your number</Text>
           <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 8, lineHeight: 20 }}>
-            Enter the 6-digit code sent to{"\n"}
-            <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>{email || phone}</Text>
+            Enter the 6-digit code sent to your email
+            {/* <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>{email || phone}</Text> */}
           </Text>
         </View>
 
@@ -105,7 +105,7 @@ export default function OtpScreen() {
           disabled={verifyOtp.isPending}
           style={{ marginTop: spacing(4), alignItems: "center" }}
         >
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>← Wrong number? Go back</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Wrong number? Go back</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
