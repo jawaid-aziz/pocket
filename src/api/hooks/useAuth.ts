@@ -1,9 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import * as authApi from "../auth";
 import { useAuthStore } from "../../store/authStore";
-import { saveRefreshToken } from "../../utils/secureStorage";
+import { getRefreshToken, clearRefreshToken, saveRefreshToken } from "../../utils/secureStorage";
 import { verifyOtp as verifyOtpApi } from "../auth";
 import { verifyPinUnlock, getMe } from "../auth";
+import { useWalletStore } from "../../store/walletStore"; // adjust path if different
 
 export function useRequestOtp() {
   return useMutation({
@@ -67,6 +68,25 @@ export function usePinUnlock() {
         // Non-fatal — access token is set, user can still proceed
         // Dashboard will handle missing user gracefully
       }
+    },
+  });
+}
+
+export function useLogout() {
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const resetWallet = useWalletStore((s) => s.reset);
+
+  return useMutation({
+    mutationFn: async () => {
+      const refreshToken = await getRefreshToken();
+      if (refreshToken) {
+        await authApi.logout(refreshToken).catch(() => {});
+      }
+    },
+    onSettled: async () => {
+      await clearRefreshToken();
+      clearSession();
+      resetWallet();
     },
   });
 }

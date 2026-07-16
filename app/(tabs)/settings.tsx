@@ -1,6 +1,8 @@
-import { View, Text, TextInput, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, TextInput, ActivityIndicator, ScrollView, Alert } from "react-native";
+import { router } from "expo-router";
 import { useAuthStore } from "@/src/store/authStore";
 import { useMe, useUpdateProfile } from "@/src/api/hooks/useAccount";
+import { useLogout } from "@/src/api/hooks/useAuth";
 import { useState } from "react";
 import { Button } from "@/src/components/Button";
 import { Card } from "@/src/components/Card";
@@ -11,6 +13,7 @@ export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
   const { isLoading } = useMe();
   const { mutate: update, isPending } = useUpdateProfile();
+  const { mutate: doLogout, isPending: isLoggingOut } = useLogout();
 
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -33,6 +36,23 @@ export default function SettingsScreen() {
     setEmail(user?.email || "");
     setSaveError(null);
     setEditing(false);
+  }
+
+  function performLogout() {
+    doLogout(undefined, {
+      onSuccess: () => router.replace("/login" as any),
+    });
+  }
+
+  function handleLogoutPress() {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Log Out", style: "destructive", onPress: performLogout },
+      ],
+    );
   }
 
   if (isLoading) {
@@ -142,6 +162,15 @@ export default function SettingsScreen() {
             <Button label="Edit Profile" onPress={() => setEditing(true)} />
           </View>
         )}
+
+        <View style={{ marginTop: spacing(4) }}>
+          <Button
+            label="Log Out"
+            variant="secondary"
+            onPress={handleLogoutPress}
+            loading={isLoggingOut}
+          />
+        </View>
       </ScrollView>
     </View>
   );
