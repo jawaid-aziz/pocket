@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useVerifyOtp } from "@/src/api/hooks/useAuth";
+import { useVerifyOtp, useRequestOtp } from "@/src/api/hooks/useAuth";
 import { Button } from "@/src/components/Button";
 import { colors, radius, spacing, typography } from "@/src/theme/tokens";
 
@@ -25,21 +25,23 @@ export default function OtpScreen() {
   const [error, setError] = useState("");
   const inputRef = useRef<TextInput>(null);
   const verifyOtp = useVerifyOtp();
+  const requestOtp = useRequestOtp();
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  function handleVerify() {
+  function handleVerify(code?: string) {
     setError("");
+    const value = code ?? otp;
 
-    if (otp.length !== 6) {
+    if (value.length !== 6) {
       setError("Enter the 6-digit code");
       return;
     }
 
     verifyOtp.mutate(
-      { phone, otpCode: otp, purpose },
+      { phone, otpCode: value, purpose },
       {
         onSuccess: (data) => {
           router.replace({
@@ -48,6 +50,27 @@ export default function OtpScreen() {
           });
         },
         onError: (err: any) => setError(err.message || "Invalid OTP"),
+      },
+    );
+  }
+
+  // Auto-submit the moment all 6 digits are entered — fewer taps, snappier.
+  function handleChange(text: string) {
+    setError("");
+    const clean = text.replace(/\D/g, "").slice(0, 6);
+    setOtp(clean);
+    if (clean.length === 6 && !verifyOtp.isPending) {
+      handleVerify(clean);
+    }
+  }
+
+  function handleResend() {
+    setError("");
+    requestOtp.mutate(
+      { phone, purpose, email },
+      {
+        onError: (err: any) =>
+          setError(err.message || "Could not resend the code."),
       },
     );
   }
@@ -86,10 +109,7 @@ export default function OtpScreen() {
             keyboardType="number-pad"
             maxLength={6}
             value={otp}
-            onChangeText={(text) => {
-              setError("");
-              setOtp(text);
-            }}
+            onChangeText={handleChange}
           />
           {error ? (
             <Text style={{ color: colors.danger, fontSize: 12, marginTop: 8, textAlign: "center" }}>
@@ -98,12 +118,26 @@ export default function OtpScreen() {
           ) : null}
         </View>
 
-        <Button label="Verify" onPress={handleVerify} loading={verifyOtp.isPending} />
+        <Button
+          label="Verify"
+          onPress={() => handleVerify()}
+          loading={verifyOtp.isPending}
+        />
+
+        <Pressable
+          onPress={handleResend}
+          disabled={verifyOtp.isPending || requestOtp.isPending}
+          style={{ marginTop: spacing(3), alignItems: "center" }}
+        >
+          <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "600" }}>
+            {requestOtp.isPending ? "Resending…" : "Resend code"}
+          </Text>
+        </Pressable>
 
         <Pressable
           onPress={() => router.back()}
           disabled={verifyOtp.isPending}
-          style={{ marginTop: spacing(4), alignItems: "center" }}
+          style={{ marginTop: spacing(2), alignItems: "center" }}
         >
           <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Wrong number? Go back</Text>
         </Pressable>

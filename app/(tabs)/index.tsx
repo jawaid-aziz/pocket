@@ -1,5 +1,7 @@
 import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useState, useCallback } from 'react';
+import { Receipt } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useMe } from '../../src/api/hooks/useAccount';
 import { useTransactions } from '../../src/api/hooks/useTransactions';
 import { useWalletStore } from '../../src/store/walletStore';
@@ -7,6 +9,13 @@ import { BalanceCard } from '../../src/components/BalanceCard';
 import { QuickActions } from '../../src/components/QuickActions';
 import { SoundBoxStatusCard } from '../../src/components/SoundBoxStatusCard';
 import { TransactionItem } from '../../src/components/TransactionItem';
+import { EmptyState } from '../../src/components/EmptyState';
+import {
+  Skeleton,
+  TransactionSkeleton,
+  BalanceSkeleton,
+} from '../../src/components/Skeleton';
+import { PressableScale } from '../../src/components/PressableScale';
 import { colors, spacing, typography } from '../../src/theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -14,7 +23,7 @@ import { useRouter } from 'expo-router';
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { data: user, isLoading: userLoading, refetch: refetchMe } = useMe();
-  const { data: transactions, isLoading: txLoading, refetch: refetchTx } = useTransactions();
+  const { data: transactions, isLoading: txLoading, isError: txError, refetch: refetchTx } = useTransactions();
   const balance = useWalletStore((s) => s.balance);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
@@ -27,32 +36,57 @@ export default function DashboardScreen() {
 
   const recent = (transactions ?? []).slice(0, 5);
 
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  })();
+
+  const today = new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
       contentContainerStyle={{ paddingBottom: spacing(8) }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      <View style={{ paddingHorizontal: spacing(4), paddingTop: insets.top + spacing(4) }}>
-<Text style={{ ...typography.caption }}>Good evening</Text>
-<Text style={{ ...typography.h2, marginTop: 2 }}>
-  {userLoading ? 'Loading...' : user?.name ?? 'there'}
-</Text>
-      </View>
+      <Animated.View entering={FadeIn.duration(300)} style={{ paddingHorizontal: spacing(4), paddingTop: insets.top + spacing(4) }}>
+        <Text style={{ ...typography.caption }}>{greeting}</Text>
+        {userLoading ? (
+          <Skeleton width={140} height={20} style={{ marginTop: 6 }} />
+        ) : (
+          <Text style={{ ...typography.h2, marginTop: 2 }}>
+            {user?.name ?? "there"}
+          </Text>
+        )}
+        <Text style={{ ...typography.micro, color: colors.textTertiary, marginTop: 2 }}>
+          {today}
+        </Text>
+      </Animated.View>
 
-      <View style={{ paddingHorizontal: spacing(4), marginTop: spacing(2) }}>
-        <BalanceCard balance={balance ?? 0} />
-      </View>
+      <Animated.View entering={FadeInDown.duration(350)} style={{ paddingHorizontal: spacing(4), marginTop: spacing(3) }}>
+        {userLoading ? (
+          <BalanceSkeleton />
+        ) : (
+          <BalanceCard balance={balance ?? 0} />
+        )}
+      </Animated.View>
 
-      <View style={{ paddingHorizontal: spacing(4), marginTop: spacing(4) }}>
+      <Animated.View entering={FadeInDown.delay(80).duration(350)} style={{ paddingHorizontal: spacing(4), marginTop: spacing(4) }}>
         <QuickActions />
-      </View>
+      </Animated.View>
 
-      <View style={{ paddingHorizontal: spacing(4), marginTop: spacing(4) }}>
+      <Animated.View entering={FadeInDown.delay(140).duration(350)} style={{ paddingHorizontal: spacing(4), marginTop: spacing(4) }}>
         <SoundBoxStatusCard deviceName="SoundBox 01" online={false} lastAnnouncement="Not connected yet" />
-      </View>
+      </Animated.View>
 
-      <View
+      <Animated.View
+        entering={FadeInDown.delay(200).duration(350)}
         style={{
           paddingHorizontal: spacing(4),
           marginTop: spacing(4),
@@ -62,20 +96,46 @@ export default function DashboardScreen() {
         }}
       >
         <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>Recent activity</Text>
-        <Pressable onPress={() => router.push('/(tabs)/transactions' as any)}>
+        <PressableScale onPress={() => router.push('/(tabs)/transactions' as any)} haptic>
           <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>See all</Text>
-        </Pressable>
-      </View>
+        </PressableScale>
+      </Animated.View>
 
       <View style={{ paddingHorizontal: spacing(4), marginTop: spacing(2) }}>
         {txLoading ? (
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Loading transactions...</Text>
+          <>
+            <TransactionSkeleton />
+            <TransactionSkeleton />
+            <TransactionSkeleton />
+          </>
+        ) : txError ? (
+          <EmptyState
+            icon={Receipt}
+            title="Couldn't load your activity"
+            subtitle="Check your connection and try again."
+            action={
+              <Pressable onPress={() => refetchTx()}>
+                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '600' }}>Tap to retry</Text>
+              </Pressable>
+            }
+          />
         ) : recent.length === 0 ? (
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-            No transactions yet. Load your wallet to get started.
-          </Text>
+          <EmptyState
+            icon={Receipt}
+            title="No transactions yet"
+            subtitle="Load your wallet to see activity here."
+            action={
+              <PressableScale onPress={() => router.push('/(tabs)/load' as any)} haptic>
+                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '600' }}>Load money</Text>
+              </PressableScale>
+            }
+          />
         ) : (
-          recent.map((tx) => <TransactionItem key={tx.id} tx={tx} />)
+          recent.map((tx, i) => (
+            <Animated.View key={tx.id} entering={FadeInDown.delay(i * 40).duration(250)}>
+              <TransactionItem tx={tx} />
+            </Animated.View>
+          ))
         )}
       </View>
     </ScrollView>

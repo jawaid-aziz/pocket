@@ -8,13 +8,19 @@ import { StatusBar } from "expo-status-bar";
 export default function SplashScreen() {
   useEffect(() => {
     async function checkSession() {
-      const token = await getRefreshToken();
-      if (token) {
-        router.replace({
-          pathname: "/pin" as any,
-          params: { refreshToken: token },
-        });
-      } else {
+      try {
+        const token = await getRefreshToken();
+        if (token) {
+          router.replace({
+            pathname: "/pin" as any,
+            params: { refreshToken: token },
+          });
+        } else {
+          router.replace("/login" as any);
+        }
+      } catch {
+        // SecureStore read failed — fall back to a fresh login rather than
+        // leaving the user stuck on the spinner.
         router.replace("/login" as any);
       }
     }

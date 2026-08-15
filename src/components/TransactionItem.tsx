@@ -2,6 +2,7 @@
 import { View, Text } from 'react-native';
 import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react-native';
 import { colors, spacing, typography, txColors, TxKind } from '../theme/tokens';
+import { formatPKR } from '../utils/format';
 
 export type BackendTransaction = {
   id: string;
@@ -23,7 +24,10 @@ function toLabel(tx: BackendTransaction): string {
 }
 
 function timeAgo(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
+  const date = new Date(iso);
+  const diffMs = Date.now() - date.getTime();
+  // Guard against malformed/missing timestamps so we never render "Invalid Date".
+  if (Number.isNaN(diffMs)) return "—";
   const mins = Math.floor(diffMs / 60000);
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins} min ago`;
@@ -32,7 +36,7 @@ function timeAgo(iso: string): string {
   const days = Math.floor(hrs / 24);
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 const icons: Record<TxKind, React.ComponentType<any>> = {
@@ -77,7 +81,7 @@ export function TransactionItem({ tx }: { tx: BackendTransaction }) {
       </View>
 
       <Text style={{ ...typography.bodyStrong, color: fg }}>
-        {sign}Rs. {amount.toLocaleString()}
+        {sign}Rs. {formatPKR(amount)}
       </Text>
     </View>
   );

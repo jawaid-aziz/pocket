@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -11,20 +10,8 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRequestOtp } from "@/src/api/hooks/useAuth";
 import { Button } from "@/src/components/Button";
+import { toE164, isValidPakistaniNumber } from "@/src/utils/phone";
 import { colors, radius, spacing, typography } from "@/src/theme/tokens";
-
-function toE164(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.startsWith("0") && digits.length === 11) {
-    return "+92" + digits.slice(1);
-  }
-  return "+" + digits;
-}
-
-function isValidPakistaniNumber(phone: string): boolean {
-  const digits = phone.replace(/\D/g, "");
-  return /^0[3][0-9]{9}$/.test(digits);
-}
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -52,7 +39,9 @@ export default function LoginScreen() {
       return;
     }
 
-    if (!isValidEmail(email)) {
+    // Email is only required for new accounts — don't block a returning user
+    // who no longer remembers what they typed at signup.
+    if (email && !isValidEmail(email)) {
       setError("Enter a valid email address");
       return;
     }
@@ -64,7 +53,13 @@ export default function LoginScreen() {
       {
         onSuccess: () => goToOtp(e164, "SIGNUP", email),
         onError: (err: any) => {
-          if (err.status === 409) {
+          // Only fall back to login when the phone is already registered.
+          // An "Email already registered" conflict is a signup problem the
+          // user must resolve — never route it into the login flow.
+          if (
+            err.status === 409 &&
+            err.message?.includes("Phone already registered")
+          ) {
             requestOtp.mutate(
               { phone: e164, purpose: "LOGIN_NEW_DEVICE" },
               {
@@ -72,6 +67,11 @@ export default function LoginScreen() {
                 onError: (e: any) => setError(e.message || "Failed to send OTP"),
               },
             );
+          } else if (
+            err.status === 400 &&
+            err.message?.includes("email is required")
+          ) {
+            setError("Email is required for new accounts");
           } else {
             setError(err.message || "Failed to send OTP");
           }

@@ -1,7 +1,8 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { ArrowDown, ArrowUp, QrCode, Receipt } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors, typography } from '../theme/tokens';
+import { PressableScale } from './PressableScale';
 
 type Action = {
   label: string;
@@ -23,12 +24,13 @@ export function QuickActions() {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       {actions.map(({ label, icon: Icon, onPress, comingSoon }) => (
-        <Pressable
+        <PressableScale
           key={label}
           onPress={comingSoon ? undefined : onPress}
           disabled={comingSoon}
-          style={{ alignItems: 'center', gap: 4, opacity: comingSoon ? 0.5 : 1 }}
+          haptic
           accessibilityLabel={comingSoon ? `${label} - coming soon` : label}
+          style={{ alignItems: 'center', gap: 4, opacity: comingSoon ? 0.5 : 1 }}
         >
           <View
             style={{
@@ -43,7 +45,7 @@ export function QuickActions() {
             <Icon size={18} color={colors.primary} />
           </View>
           <Text style={{ ...typography.micro }}>{label}</Text>
-        </Pressable>
+        </PressableScale>
       ))}
     </View>
   );

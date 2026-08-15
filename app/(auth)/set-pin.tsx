@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,16 +32,25 @@ export default function SetPinScreen() {
   const currentPin = step === "enter" ? pin : confirmPin;
   const setCurrentPin = step === "enter" ? setPin : setConfirmPin;
 
+  // Move to the confirm step as soon as the first PIN is fully entered —
+  // replaces the previous fragile setTimeout.
+  useEffect(() => {
+    if (pin.length === PIN_LENGTH && step === "enter") {
+      setStep("confirm");
+    }
+  }, [pin, step]);
+
   function handleDigit(digit: string) {
-    if (currentPin.length >= PIN_LENGTH) return;
+    // Guard against the pad staying interactive while signup/login is in
+    // flight — deleting a digit and re-entering it would fire a duplicate
+    // signup/login request.
+    if (isPending || currentPin.length >= PIN_LENGTH) return;
     const next = currentPin + digit;
     setCurrentPin(next);
     setError("");
 
     if (next.length === PIN_LENGTH) {
-      if (step === "enter") {
-        setTimeout(() => setStep("confirm"), 200);
-      } else {
+      if (step === "confirm") {
         if (pin !== next) {
           setError("PINs don't match. Try again.");
           setConfirmPin("");
@@ -125,7 +134,7 @@ export default function SetPinScreen() {
         <View style={{ marginBottom: spacing(4), height: 32 }} />
       )}
 
-      <PinPad onPress={handleDigit} onDelete={handleDelete} />
+      <PinPad onPress={handleDigit} onDelete={handleDelete} disabled={isPending} />
     </View>
   );
 }

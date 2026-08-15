@@ -8,12 +8,14 @@ import { Button } from "@/src/components/Button";
 import { Card } from "@/src/components/Card";
 import { ScreenHeader } from "@/src/components/ScreenHeader";
 import { colors, spacing, typography } from "@/src/theme/tokens";
+import { useToastStore } from "@/src/store/toastStore";
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
   const { isLoading } = useMe();
   const { mutate: update, isPending } = useUpdateProfile();
   const { mutate: doLogout, isPending: isLoggingOut } = useLogout();
+  const toast = useToastStore((s) => s.show);
 
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -25,8 +27,14 @@ export default function SettingsScreen() {
     update(
       { name, email },
       {
-        onSuccess: () => setEditing(false),
-        onError: () => setSaveError("Could not update profile. Please try again."),
+        onSuccess: () => {
+          setEditing(false);
+          toast("Profile updated", "success");
+        },
+        onError: (err: any) =>
+          setSaveError(
+            err.message || "Could not update profile. Please try again.",
+          ),
       },
     );
   }
@@ -40,7 +48,9 @@ export default function SettingsScreen() {
 
   function performLogout() {
     doLogout(undefined, {
-      onSuccess: () => router.replace("/login" as any),
+      // Navigate on settle so a SecureStore failure still leaves the app (the
+      // hook's onSettled always clears the local session regardless).
+      onSettled: () => router.replace("/login" as any),
     });
   }
 

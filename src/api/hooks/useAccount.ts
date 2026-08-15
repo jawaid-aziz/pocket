@@ -9,9 +9,12 @@ export function useMe() {
   const setSession = useAuthStore((s) => s.setSession);
   const accessToken = useAuthStore((s) => s.accessToken);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const userId = useAuthStore((s) => s.user?.id);
 
   return useQuery({
-    queryKey: ["me"],
+    // Scoped by user id so a quick logout → login can't surface the previous
+    // user's cached data.
+    queryKey: ["me", userId],
     queryFn: async () => {
       const data = await fetchMe();
       const { balance, ...user } = data.user;

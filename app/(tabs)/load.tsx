@@ -4,19 +4,43 @@ import {
   Text,
   TextInput,
   ScrollView,
-  Pressable,
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { CardField, useStripe } from "@stripe/stripe-react-native";
+import { CheckCircle2 } from "lucide-react-native";
+import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { useTopUp } from "../../src/api/hooks/useAccount";
+import { fetchMe } from "../../src/api/account";
+import { useWalletStore } from "../../src/store/walletStore";
 import { Button } from "../../src/components/Button";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
+import { PressableScale } from "../../src/components/PressableScale";
+import { formatPKR } from "../../src/utils/format";
+import { successFeedback } from "../../src/utils/haptics";
 import { colors, radius, spacing } from "../../src/theme/tokens";
 
 const QUICK_AMOUNTS = [500, 1000, 2000];
 const MAX_AMOUNT = 50000;
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// The wallet is credited server-side by Stripe's webhook. Poll the balance
+// until it reflects the top-up so we never claim money was added when it
+// wasn't. Returns false after ~15s if the credit hasn't landed.
+async function waitForCredit(balanceBefore: number, amount: number): Promise<boolean> {
+  for (let i = 0; i < 10; i++) {
+    await wait(1500);
+    try {
+      const { user } = await fetchMe();
+      if (Number(user.balance) >= balanceBefore + amount) return true;
+    } catch {
+      // Transient fetch failure — keep polling
+    }
+  }
+  return false;
+}
 
 type Step = "amount" | "card" | "confirming" | "done";
 
@@ -110,12 +134,20 @@ export default function LoadScreen() {
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<Step>("amount");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  // Reset to "" and derive the display value from the API response so a
+  // non-USD STRIPE_CURRENCY config never shows a stale hardcoded default.
+  const [currency, setCurrency] = useState<string>("");
   const [cardComplete, setCardComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
+  const chargeCurrency = (currency || "usd").toUpperCase();
+
   const handleCreateIntent = () => {
     setError(null);
+    // Guard against a fast double-tap firing two intents before the button's
+    // loading state has re-rendered (would orphan a PENDING ledger row).
+    if (topUp.isPending) return;
     const numericAmount = Number(amount);
 
     if (!numericAmount || numericAmount <= 0)
@@ -126,9 +158,11 @@ export default function LoadScreen() {
     topUp.mutate(numericAmount, {
       onSuccess: (data) => {
         setClientSecret(data.clientSecret);
+        setCurrency(data.currency || "usd");
         setStep("card");
       },
-      onError: () => setError("Could not start top-up. Please try again."),
+      onError: (err: any) =>
+        setError(err.message || "Could not start top-up. Please try again."),
     });
   };
 
@@ -138,30 +172,50 @@ export default function LoadScreen() {
     setConfirming(true);
     setStep("confirming");
 
-    const { error: stripeError, paymentIntent } = await confirmPayment(
-      clientSecret,
-      {
-        paymentMethodType: "Card",
-      },
-    );
+    const balanceBefore = useWalletStore.getState().balance;
+    const expected = Number(amount);
 
-    if (stripeError) {
-      setError(stripeError.message);
-      setStep("card");
-      setConfirming(false);
-      return;
-    }
+    try {
+      const { error: stripeError, paymentIntent } = await confirmPayment(
+        clientSecret,
+        {
+          paymentMethodType: "Card",
+        },
+      );
 
-    if (paymentIntent?.status === "Succeeded") {
-      // Webhook credits the wallet server-side; give it a moment, then refetch.
-      setTimeout(async () => {
+      if (stripeError) {
+        setError(stripeError.message);
+        setStep("card");
+        setConfirming(false);
+        return;
+      }
+
+      if (paymentIntent?.status === "Succeeded") {
+        // Verify the webhook actually credited the wallet before claiming success.
+        const credited = await waitForCredit(balanceBefore, expected);
         await qc.invalidateQueries({ queryKey: ["me"] });
         await qc.invalidateQueries({ queryKey: ["transactions"] });
+        successFeedback();
+        if (!credited) {
+          setError(
+            "Payment received, but your balance is still updating. Please check again shortly.",
+          );
+        }
         setStep("done");
         setConfirming(false);
-      }, 1500);
-    } else {
-      setError("Payment did not complete. Please try again.");
+      } else {
+        setError("Payment did not complete. Please try again.");
+        setStep("card");
+        setConfirming(false);
+      }
+    } catch (err) {
+      // confirmPayment can reject on native/network failures — never leave
+      // the UI stuck on the confirming spinner with no way to retry.
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Payment confirmation failed. Please try again.",
+      );
       setStep("card");
       setConfirming(false);
     }
@@ -169,6 +223,16 @@ export default function LoadScreen() {
 
   function resetFlow() {
     setAmount("");
+    setStep("amount");
+    setClientSecret(null);
+    setCurrency("");
+    setCardComplete(false);
+    setError(null);
+  }
+
+  function goBackToAmount() {
+    // Discard the current intent's client state so the next "Load money"
+    // starts clean instead of reusing a stale PaymentIntent.
     setStep("amount");
     setClientSecret(null);
     setCardComplete(false);
@@ -187,7 +251,23 @@ export default function LoadScreen() {
             padding: spacing(4),
           }}
         >
-          <Text
+          <Animated.View entering={FadeIn.duration(300)}>
+            <View
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                backgroundColor: colors.successSoft,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: spacing(4),
+              }}
+            >
+              <CheckCircle2 size={36} color={colors.success} />
+            </View>
+          </Animated.View>
+          <Animated.Text
+            entering={FadeInDown.duration(300)}
             style={{
               fontSize: 16,
               fontWeight: "700",
@@ -196,8 +276,9 @@ export default function LoadScreen() {
             }}
           >
             Wallet loaded successfully
-          </Text>
-          <Text
+          </Animated.Text>
+          <Animated.Text
+            entering={FadeInDown.delay(60).duration(300)}
             style={{
               fontSize: 13,
               color: colors.textSecondary,
@@ -205,9 +286,9 @@ export default function LoadScreen() {
               textAlign: "center",
             }}
           >
-            Rs. {Number(amount).toLocaleString()} has been added to your
+            Rs. {formatPKR(Number(amount))} has been added to your
             balance.
-          </Text>
+          </Animated.Text>
           <Button
             label="Back to dashboard"
             onPress={() => {
@@ -245,9 +326,10 @@ export default function LoadScreen() {
               style={{ flexDirection: "row", gap: 8, marginBottom: spacing(4) }}
             >
               {QUICK_AMOUNTS.map((val) => (
-                <Pressable
+                <PressableScale
                   key={val}
                   onPress={() => setAmount(String(val))}
+                  haptic
                   style={{
                     backgroundColor:
                       amount === String(val)
@@ -259,9 +341,9 @@ export default function LoadScreen() {
                   }}
                 >
                   <Text style={{ fontSize: 12, color: colors.textPrimary }}>
-                    Rs. {val.toLocaleString()}
+                    Rs. {formatPKR(val, { decimals: 0 })}
                   </Text>
-                </Pressable>
+                </PressableScale>
               ))}
             </View>
 
@@ -332,8 +414,22 @@ export default function LoadScreen() {
                 marginBottom: spacing(2),
               }}
             >
-              Loading Rs. {Number(amount).toLocaleString()} — enter test card
+              Loading Rs. {formatPKR(Number(amount))} — enter test card
               details
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 11,
+                color: colors.textTertiary,
+                marginBottom: spacing(3),
+                lineHeight: 16,
+              }}
+            >
+              Stripe test mode charges {formatPKR(Number(amount))}{" "}
+              {chargeCurrency} for this top-up. PKR is not supported by
+              Stripe, so the same numeric value is charged in {chargeCurrency}.
+              The wallet balance is credited in Rs.
             </Text>
 
             <CardField
@@ -380,7 +476,7 @@ export default function LoadScreen() {
             ) : (
               <>
                 <Button
-                  label={`Pay Rs. ${Number(amount).toLocaleString()} & add funds`}
+                  label={`Pay ${chargeCurrency} ${formatPKR(Number(amount))} & add funds`}
                   onPress={handleConfirmCard}
                   disabled={!cardComplete}
                 />
@@ -388,7 +484,7 @@ export default function LoadScreen() {
                   <Button
                     label="Change amount"
                     variant="secondary"
-                    onPress={() => setStep("amount")}
+                    onPress={goBackToAmount}
                   />
                 </View>
               </>

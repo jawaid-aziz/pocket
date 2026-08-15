@@ -35,7 +35,7 @@ export async function updateProfile(data: { name?: string; email?: string }) {
 }
 
 export async function topUp(amount: number) {
-  return apiClient<{ clientSecret: string; paymentIntentId: string }>("/wallet/topup", {
+  return apiClient<{ clientSecret: string; paymentIntentId: string; currency: string }>("/wallet/topup", {
     method: "POST",
     body: JSON.stringify({ amount }),
     token: getToken(),

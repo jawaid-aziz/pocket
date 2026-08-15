@@ -1,4 +1,11 @@
 import { View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { useEffect } from "react";
 import { colors } from "@/src/theme/tokens";
 
 interface PinDotsProps {
@@ -8,8 +15,30 @@ interface PinDotsProps {
 }
 
 export default function PinDots({ length, filled, error }: PinDotsProps) {
+  const shake = useSharedValue(0);
+
+  useEffect(() => {
+    if (error) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 45 }),
+        withTiming(8, { duration: 60 }),
+        withTiming(-6, { duration: 60 }),
+        withTiming(0, { duration: 60 }),
+      );
+    }
+  }, [error, shake]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }],
+  }));
+
   return (
-    <View style={{ flexDirection: "row", gap: 16, justifyContent: "center", marginVertical: 32 }}>
+    <Animated.View
+      style={[
+        { flexDirection: "row", gap: 16, justifyContent: "center", marginVertical: 32 },
+        animatedStyle,
+      ]}
+    >
       {Array.from({ length }).map((_, i) => {
         const isFilled = i < filled;
         return (
@@ -26,6 +55,6 @@ export default function PinDots({ length, filled, error }: PinDotsProps) {
           />
         );
       })}
-    </View>
+    </Animated.View>
   );
 }

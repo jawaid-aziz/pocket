@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, Text, TextInput, ScrollView, Pressable } from "react-native";
+import { View, Text, TextInput, ScrollView, Keyboard } from "react-native";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
 import {
@@ -8,7 +8,11 @@ import {
 } from "../../src/api/hooks/useTransactions";
 import { Button } from "../../src/components/Button";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
+import { PressableScale } from "../../src/components/PressableScale";
 import { colors, radius, spacing } from "../../src/theme/tokens";
+import { toE164, isValidPakistaniNumber } from "../../src/utils/phone";
+import { formatPKR } from "../../src/utils/format";
+import { useToastStore } from "../../src/store/toastStore";
 
 function initials(name: string) {
   return name
@@ -23,6 +27,7 @@ export default function SendScreen() {
   const router = useRouter();
   const { data: transactions } = useTransactions();
   const sendMoney = useSendMoney();
+  const toast = useToastStore((s) => s.show);
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -39,53 +44,44 @@ export default function SendScreen() {
     return Array.from(seen.values()).slice(0, 2);
   }, [transactions]);
 
-  // add near the top of send.tsx, alongside other helpers
-function toE164(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.startsWith("0") && digits.length === 11) {
-    return "+92" + digits.slice(1);
-  }
-  if (digits.startsWith("92") && digits.length === 12) {
-    return "+" + digits;
-  }
-  return "+" + digits; // fallback
-}
+  const handleSend = () => {
+    setError(null);
 
-function isValidPakistaniNumber(phone: string): boolean {
-  const digits = phone.replace(/\D/g, "");
-  return /^0[3][0-9]{9}$/.test(digits) || /^92[3][0-9]{9}$/.test(digits);
-}
+    if (!isValidPakistaniNumber(phone)) {
+      return setError("Enter a valid Pakistani number (03XX-XXXXXXX).");
+    }
 
-const handleSend = () => {
-  setError(null);
+    const numericAmount = Number(amount);
+    if (!numericAmount || numericAmount <= 0) return setError("Enter a valid amount.");
 
-  if (!isValidPakistaniNumber(phone)) {
-    return setError("Enter a valid Pakistani number (03XX-XXXXXXX).");
-  }
+    const e164Phone = toE164(phone);
 
-  const numericAmount = Number(amount);
-  if (!numericAmount || numericAmount <= 0) return setError("Enter a valid amount.");
+    Keyboard.dismiss();
 
-  const e164Phone = toE164(phone);
-
-  sendMoney.mutate(
-    { recipientPhone: e164Phone, amount: numericAmount },
-    {
-      onSuccess: () => {
-        setPhone("");
-        setAmount("");
-        router.push("/(tabs)" as any);
+    sendMoney.mutate(
+      { recipientPhone: e164Phone, amount: numericAmount },
+      {
+        onSuccess: (data) => {
+          const name = data.recipient?.name || data.recipient?.phone;
+          toast(`Sent Rs. ${formatPKR(data.amount)} to ${name}`, "success");
+          setPhone("");
+          setAmount("");
+          router.push("/(tabs)" as any);
+        },
+        onError: (err: any) => {
+          if (err.status === 404) {
+            setError("No account found with that phone number.");
+          } else if (err.status === 400) {
+            // Surface actionable backend errors (insufficient balance,
+            // self-send, amount limit, invalid amount) instead of a generic one.
+            setError(err.message || "Send failed. Please try again.");
+          } else {
+            setError("Send failed. Please try again.");
+          }
+        },
       },
-      onError: (err: any) => {
-        if (err.status === 404) {
-          setError("No account found with that phone number.");
-        } else {
-          setError("Send failed. Please try again.");
-        }
-      },
-    },
-  );
-};
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -110,8 +106,9 @@ const handleSend = () => {
               style={{ flexDirection: "row", gap: 14, marginBottom: spacing(4) }}
             >
               {recentContacts.map((contact) => (
-                <Pressable
+                <PressableScale
                   key={contact.phone}
+                  haptic
                   style={{ alignItems: "center" }}
                   onPress={() => setPhone(contact.phone)}
                 >
@@ -144,7 +141,7 @@ const handleSend = () => {
                   >
                     {contact.name.split(" ")[0]}
                   </Text>
-                </Pressable>
+                </PressableScale>
               ))}
               <View style={{ alignItems: "center" }}>
                 <View

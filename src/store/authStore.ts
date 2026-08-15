@@ -8,6 +8,7 @@ interface AuthState {
   isUnlocked: boolean; // true after PIN/biometric on app open
   setSession: (user: User, accessToken: string) => void;
   setAccessToken: (token: string) => void;
+  setAuthenticated: (value: boolean) => void;
   setUnlocked: (value: boolean) => void;
   clearSession: () => void;
 }
@@ -20,6 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setSession: (user, accessToken) =>
     set({ user, accessToken, isAuthenticated: true, isUnlocked: true }),
   setAccessToken: (accessToken) => set({ accessToken }),
+  setAuthenticated: (value) => set({ isAuthenticated: value }),
   setUnlocked: (value) => set({ isUnlocked: value }),
   clearSession: () =>
     set({

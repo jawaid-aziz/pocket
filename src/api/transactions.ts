@@ -17,6 +17,12 @@ export interface Transaction {
   } | null;
 }
 
+export interface TransactionsPage {
+  transactions: Transaction[];
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
 export async function sendMoney(params: {
   recipientPhone: string;
   amount: number;
@@ -27,6 +33,7 @@ export async function sendMoney(params: {
     balance: number;
     recipient: { phone: string; name: string | null };
     amount: number;
+    transaction: Transaction | null;
   }>("/transactions/send", {
     method: "POST",
     body: JSON.stringify(params),
@@ -34,8 +41,15 @@ export async function sendMoney(params: {
   });
 }
 
-export async function fetchTransactions() {
-  return apiClient<{ transactions: Transaction[] }>("/transactions", {
+export async function fetchTransactions(opts?: {
+  limit?: number;
+  cursor?: string;
+}) {
+  const query = new URLSearchParams();
+  if (opts?.limit) query.set("limit", String(opts.limit));
+  if (opts?.cursor) query.set("cursor", opts.cursor);
+  const qs = query.toString();
+  return apiClient<TransactionsPage>(`/transactions${qs ? `?${qs}` : ""}`, {
     method: "GET",
     token: getToken(),
   });

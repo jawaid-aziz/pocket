@@ -89,7 +89,7 @@ export default function PinScreen() {
         <View style={{ marginBottom: spacing(4), height: 32 }} />
       )}
 
-      <PinPad onPress={handleDigit} onDelete={handleDelete} />
+      <PinPad onPress={handleDigit} onDelete={handleDelete} disabled={pinUnlock.isPending} />
 
       <Pressable onPress={handleSignOut} disabled={pinUnlock.isPending} style={{ marginTop: spacing(6) }}>
         <Text style={{ color: colors.textTertiary, fontSize: 13 }}>Not you? Sign out</Text>

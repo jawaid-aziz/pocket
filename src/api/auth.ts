@@ -71,20 +71,9 @@ export function verifyPinUnlock(params: { refreshToken: string; pin: string }) {
   });
 }
 
-export function refreshAccessToken(refreshToken: string) {
-  return apiClient<{ accessToken: string }>("/api/auth/refresh", {
-    method: "POST",
-    body: JSON.stringify({ refreshToken }),
-  });
-}
-
 export function logout(refreshToken: string) {
   return apiClient<{ message: string }>("/api/auth/logout", {
     method: "POST",
     body: JSON.stringify({ refreshToken }),
   });
-}
-
-export function getMe(token: string) {
-  return apiClient<{ user: User }>("/api/auth/me", { token });
 }
