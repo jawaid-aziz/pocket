@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0B4A3A", // was #E6F4FE
+        "backgroundColor": "#0B4A3A",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -34,9 +34,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#0B4A3A", // was #ffffff — matches your auth/index splash screen color
+          "backgroundColor": "#0B4A3A",
           "dark": {
-            "backgroundColor": "#0B4A3A" // was #000000 — keep consistent, you don't have a separate dark theme yet
+            "backgroundColor": "#0B4A3A"
           }
         }
       ],
@@ -46,6 +46,16 @@
         {
           "merchantIdentifier": "merchant.com.pocket.app",
           "enableGooglePay": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.stripe.** { *; }"
+          }
         }
       ]
     ],
